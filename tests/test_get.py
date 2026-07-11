@@ -41,3 +41,20 @@ def test_list_laws(index):
     assert by_source["테스트창업법"]["law_type"] == "법률"
     only_decree = ls.list_laws(law_type="대통령령")
     assert [l["source"] for l in only_decree] == ["테스트창업법 시행령"]
+
+
+def test_get_article_exact_source_both_sides(index):
+    # 양쪽에 제2조가 존재해도 정확일치 소스로만 한정
+    law_hits = ls.get_article("테스트창업법", "제2조")
+    assert {h["source"] for h in law_hits} == {"테스트창업법"}
+    decree_hits = ls.get_article("테스트창업법 시행령", "제2조")
+    assert {h["source"] for h in decree_hits} == {"테스트창업법 시행령"}
+    assert decree_hits[0]["article_title"] == "운영 절차"
+
+
+def test_get_article_supplementary_fallback(index):
+    # 본칙에 없는 번호(부칙 블록은 article_no=0) → 부칙 폴백 경로(else matches)
+    hits = ls.get_article("테스트창업법", "0")
+    assert len(hits) == 1
+    assert hits[0]["is_supplementary"] is True
+    assert hits[0]["article"].startswith("부칙")
