@@ -52,7 +52,12 @@ def _date_norm(s) -> str:
 def _get_json(url: str) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": "startup-law-mcp/1.1"})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+        body = resp.read().decode("utf-8")
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        # data.go.kr는 키 미승인·서비스 오류 시 HTTP 200 + XML 엔벨로프를 반환한다
+        raise RuntimeError(f"JSON이 아닌 응답 (키 미승인/서비스 오류 가능): {body[:300]}")
 
 
 def fetch_page(key: str, target: str, page: int = 1, per_page: int = 100) -> dict:
@@ -73,7 +78,10 @@ def cmd_probe(args: argparse.Namespace) -> None:
     print(f"엔벨로프 키: {sorted(data.keys())}")
     items = data.get("data") or []
     if items:
-        print(f"아이템 수: {len(items)}, 첫 아이템 필드: {sorted(items[0].keys())}")
+        print(f"아이템 수: {len(items)}")
+        print("첫 아이템 필드/값:")
+        for k, v in sorted(items[0].items()):
+            print(f"  {k}: {str(v)[:80]}")
     print(f"원시 응답 저장: {out}")
 
 
