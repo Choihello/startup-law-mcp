@@ -322,6 +322,73 @@ def search(query: str, law_type: Optional[str] = None,
     } for sc, pos, a in scored[:limit]]
 
 
+ARTICLE_TOKEN_RE = re.compile(r"^\s*(?:제)?(\d+)조?(?:의(\d+))?\s*$")
+
+
+def _parse_article_token(token: str) -> Optional[tuple[int, int]]:
+    t = _nfc(str(token)).strip()
+    m = ARTICLE_TOKEN_RE.match(t)
+    if m:
+        return int(m.group(1)), int(m.group(2) or 0)
+    m2 = re.search(r"제(\d+)조(?:의(\d+))?", t)
+    if m2:
+        return int(m2.group(1)), int(m2.group(2) or 0)
+    return None
+
+
+def _source_selector(query: Optional[str], articles: list[Article]):
+    """법령명 매칭 술어. 정확일치(NFC)가 있으면 그 법령으로 한정 —
+    '테스트창업법'이 '테스트창업법 시행령'까지 번지는 모호성 차단."""
+    if not query:
+        return lambda s: True
+    q = _nfc(query).strip()
+    if any(a.source == q for a in articles):
+        return lambda s: s == q
+    return lambda s: source_match(query, s)
+
+
+def get_article(source: str, article: str) -> list[dict]:
+    """법령명 매칭(정확일치 우선) + 조문번호 정확매칭. 본칙 우선."""
+    parsed = _parse_article_token(article)
+    if parsed is None:
+        return []
+    no, sub = parsed
+    arts = load_index()
+    src_ok = _source_selector(source, arts)
+    matches = [a for a in arts
+               if src_ok(a.source) and a.article_no == no and a.article_sub == sub]
+    main = [a for a in matches if not a.is_supplementary]
+    chosen = main if main else matches
+    return [{
+        "law_type": a.law_type,
+        "source": a.source,
+        "revision": a.revision,
+        "chapter": a.chapter,
+        "article": a.article,
+        "article_title": a.article_title,
+        "citation": a.citation,
+        "body": a.body,
+        "effective_date": a.effective_date,
+        "is_supplementary": a.is_supplementary,
+    } for a in chosen]
+
+
+def list_laws(law_type: Optional[str] = None) -> list[dict]:
+    by_src: dict[str, dict] = {}
+    for a in load_index():
+        if law_type and a.law_type != law_type:
+            continue
+        if a.source not in by_src:
+            by_src[a.source] = {
+                "source": a.source,
+                "law_type": a.law_type,
+                "revision": a.revision,
+                "article_count": 0,
+            }
+        by_src[a.source]["article_count"] += 1
+    return sorted(by_src.values(), key=lambda x: (x["law_type"], x["source"]))
+
+
 def cmd_build(_args: argparse.Namespace) -> None:
     build_index()
 
@@ -331,6 +398,12 @@ def cmd_search(args: argparse.Namespace) -> None:
                     limit=args.limit, fuzzy=args.fuzzy):
         print(f"[{r['score']:>6}] {r['citation']}({r['article_title']})")
         print(f"        {r['snippet']}")
+
+
+def cmd_get(args: argparse.Namespace) -> None:
+    for h in get_article(args.source, args.article):
+        print(f"== {h['citation']}({h['article_title']}) [{h['revision']}]")
+        print(h["body"])
 
 
 def main() -> None:
@@ -345,6 +418,10 @@ def main() -> None:
     psr.add_argument("--limit", type=int, default=10)
     psr.add_argument("--fuzzy", action="store_true")
     psr.set_defaults(func=cmd_search)
+    pg = sub.add_parser("get", help="조문 본문 조회")
+    pg.add_argument("source")
+    pg.add_argument("article")
+    pg.set_defaults(func=cmd_get)
     args = p.parse_args()
     args.func(args)
 
