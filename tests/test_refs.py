@@ -34,3 +34,10 @@ def test_refs_outgoing_prefix_sibling_not_misattributed(index):
     out = {(o["scope"], o["citation"]) for o in r["outgoing"]}
     assert ("cross_law", "테스트창업법 제2조") in out
     assert ("same_law", "테스트창업법 시행령 제2조") not in out
+
+
+def test_refs_incoming_bracketed_cross_law(index):
+    # 「테스트창업법」 제1조처럼 낫표로 감싼 인용도 역방향(incoming)에서 탐지
+    r = ls.find_references("테스트창업법", "제1조")
+    incoming = {(i["scope"], i["citation"]) for i in r["incoming"]}
+    assert ("cross_law", "테스트창업법 시행령 제2조") in incoming

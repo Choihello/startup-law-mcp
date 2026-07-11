@@ -305,6 +305,8 @@ def search(query: str, law_type: Optional[str] = None,
         if source and not source_match(source, a.source):
             continue
         sc, pos = score_article(a, tokens, idf, fuzzy=fuzzy)
+        if a.is_supplementary:
+            sc *= 0.2  # 부칙 블록은 길어 원시 TF가 과대 — 본칙 우선 노출
         if sc <= 0:
             continue
         scored.append((sc, pos, a))
@@ -605,7 +607,8 @@ def find_references(source: str, article: str, limit: int = 20,
                 if idx < 0:
                     break
                 after = a.body[idx + len(target.source): idx + len(target.source) + 60]
-                m = re.match(r"\s*제(\d+)조(?:의(\d+))?", after)
+                # 「법령명」 제N조 형태 — 닫는 낫표·괄호를 건너뛰고 조번호 매칭
+                m = re.match(r"\s*[」』\)]?\s*제(\d+)조(?:의(\d+))?", after)
                 if m and int(m.group(1)) == no and int(m.group(2) or 0) == sub:
                     incoming.append({
                         "scope": "cross_law",
