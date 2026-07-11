@@ -114,6 +114,72 @@ def normalize_intro(raw: dict) -> dict:
     }
 
 
+def fetch_all(key: str, target: str, per_page: int = 100, max_pages: int = 50) -> list[dict]:
+    """전 페이지 수집 (사업소개용). totalCount 도달 또는 빈 배치에서 중단."""
+    items: list[dict] = []
+    page = 1
+    while page <= max_pages:
+        data = fetch_page(key, target, page=page, per_page=per_page)
+        batch = data.get("data") or []
+        if not batch:
+            break
+        items.extend(batch)
+        total = int(data.get("totalCount") or 0)
+        if total and len(items) >= total:
+            break
+        page += 1
+    return items
+
+
+def fetch_current_announcements(key: str, per_page: int = 100, max_pages: int = 50,
+                                today: str | None = None) -> list[dict]:
+    """현행 공고만 수집 — 공고 API는 전체 아카이브(2.9만+)를 반환하므로.
+
+    기본 정렬이 모집중(Y) 우선인 점을 이용해, 페이지를 넘기며
+    rcrt_prgs_yn=='Y' 또는 접수마감일이 오늘 이후인 아이템만 남기고
+    '남긴 것 0건' 페이지가 2번 연속 나오면 중단한다.
+    """
+    from datetime import date
+
+    today_s = today or date.today().isoformat()
+    kept: list[dict] = []
+    empty_streak = 0
+    page = 1
+    while page <= max_pages:
+        data = fetch_page(key, "announcement", page=page, per_page=per_page)
+        batch = data.get("data") or []
+        if not batch:
+            break
+        cur = [r for r in batch
+               if r.get("rcrt_prgs_yn") == "Y"
+               or _date_norm(r.get("pbanc_rcpt_end_dt")) >= today_s]
+        kept.extend(cur)
+        empty_streak = 0 if cur else empty_streak + 1
+        if empty_streak >= 2:
+            break
+        page += 1
+    return kept
+
+
+def sync(key: str) -> dict:
+    """현행 공고 + 사업소개 전량 수집 → 스냅샷 교체. 전체 성공 시에만 파일을 쓴다."""
+    from datetime import datetime, timezone
+
+    ann_raw = fetch_current_announcements(key)
+    intro_raw = fetch_all(key, "intro")
+    fetched_at = datetime.now(timezone.utc).isoformat()
+    ann = [normalize_announcement(r) for r in ann_raw]
+    intros = [normalize_intro(r) for r in intro_raw]
+    PROGRAMS_DIR.mkdir(parents=True, exist_ok=True)
+    for fname, items in (("announcements.json", ann), ("intros.json", intros)):
+        (PROGRAMS_DIR / fname).write_text(
+            json.dumps({"fetched_at": fetched_at, "count": len(items), "items": items},
+                       ensure_ascii=False, indent=1),
+            encoding="utf-8")
+    print(f"동기화 완료: 공고 {len(ann)}건, 사업소개 {len(intros)}건")
+    return {"announcements": len(ann), "intros": len(intros), "fetched_at": fetched_at}
+
+
 def cmd_probe(args: argparse.Namespace) -> None:
     """원시 응답을 눈으로 확인 — 필드명·엔벨로프가 코드 가정과 다르면 여기서 발견."""
     key = _key()
@@ -131,12 +197,18 @@ def cmd_probe(args: argparse.Namespace) -> None:
     print(f"원시 응답 저장: {out}")
 
 
+def cmd_sync(_args: argparse.Namespace) -> None:
+    sync(_key())
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
     pp = sub.add_parser("probe", help="API 원시 응답 확인")
     pp.add_argument("--target", choices=sorted(ENDPOINTS), required=True)
     pp.set_defaults(func=cmd_probe)
+    ps = sub.add_parser("sync", help="공고·사업소개 전체 동기화")
+    ps.set_defaults(func=cmd_sync)
     args = p.parse_args()
     args.func(args)
 
