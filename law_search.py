@@ -164,8 +164,173 @@ def load_index(use_cache: bool = True) -> list[Article]:
     return _INDEX_CACHE
 
 
+STOPWORDS = {
+    "다음", "중", "것", "것은", "것을", "어느", "어떤", "해당", "관한", "관하여",
+    "대한", "대하여", "위한", "위하여", "그리고", "그러나", "또는", "다만", "각",
+    "사항", "내용", "경우", "방법", "이상", "이하", "초과", "미만",
+    "한다", "있다", "없다", "수", "또", "이", "무엇", "어떻게",
+}
+
+JOSA_RE = re.compile(
+    r"(으로부터|에서의|으로써|이란|란|으로|로|의|를|을|은|는|이|가|과|와|에게|에서|에|도|만)$")
+
+
+def tokenize(query: str) -> list[str]:
+    query = _nfc(query)
+    out: list[str] = []
+    for tok in re.split(r"[\s,·、]+", query.strip()):
+        tok = tok.strip("().,!?\"'·")
+        if not tok:
+            continue
+        stripped = JOSA_RE.sub("", tok)
+        candidate = stripped if len(stripped) >= 2 else tok
+        if candidate in STOPWORDS or len(candidate) < 2:
+            continue
+        out.append(candidate)
+    seen: set[str] = set()
+    return [t for t in out if not (t in seen or seen.add(t))]
+
+
+_SOURCE_CONNECTOR_RE = re.compile(r"에관한|관한|의|및|와|과|등에서의|등")
+
+
+def _normalize_source(s: str) -> str:
+    s = re.sub(r"[\s·․‧・]+", "", _nfc(s))
+    return _SOURCE_CONNECTOR_RE.sub("", s)
+
+
+def source_match(query: str, source_label: str) -> bool:
+    """법령명 부분일치 (3단계): 직접 substring → 공백 토큰 전부 등장 → 정규화 substring."""
+    if not query:
+        return True
+    q = _nfc(query).strip()
+    s = _nfc(source_label)
+    if not q:
+        return True
+    if q in s:
+        return True
+    tokens = [t for t in re.split(r"\s+", q) if len(t) >= 2]
+    if tokens and all(t in s for t in tokens):
+        return True
+    nq = _normalize_source(q)
+    if nq and nq in _normalize_source(s):
+        return True
+    return False
+
+
+def compute_idf(tokens: list[str], articles: list[Article]) -> dict[str, float]:
+    n = len(articles)
+    idf: dict[str, float] = {}
+    for t in tokens:
+        df = sum(1 for a in articles
+                 if t in a.body or t in a.article_title or t in a.chapter)
+        idf[t] = math.log((n + 1) / (df + 1)) + 1.0
+    return idf
+
+
+def _bigrams(s: str) -> list[str]:
+    return [s[i:i + 2] for i in range(len(s) - 1)]
+
+
+def score_article(a: Article, tokens: list[str],
+                  idf: Optional[dict[str, float]] = None,
+                  fuzzy: bool = False) -> tuple[float, int]:
+    score = 0.0
+    first_pos = -1
+    body = a.body
+    for tok in tokens:
+        w = idf[tok] if idf else 1.0
+        if tok in a.article_title:
+            score += 5.0 * w
+        if tok in a.chapter:
+            score += 2.0 * w
+        cnt = body.count(tok)
+        if cnt:
+            score += float(cnt) * w
+            pos = body.find(tok)
+            if first_pos < 0 or pos < first_pos:
+                first_pos = pos
+        elif fuzzy and len(tok) >= 3:
+            bgs = _bigrams(tok)
+            hit_kinds = sum(1 for b in bgs if b in body)
+            if hit_kinds >= len(bgs) * 0.5:
+                bg_hits = sum(body.count(b) for b in bgs)
+                score += (bg_hits / len(bgs)) * 0.3 * w
+                if first_pos < 0:
+                    for b in bgs:
+                        p = body.find(b)
+                        if p >= 0:
+                            first_pos = p
+                            break
+    return score, first_pos
+
+
+_META_NOISE_RE = re.compile(
+    r"<(?:개정|신설|삭제|단서개정|제목개정|전부개정|시행)[^>]*?>"
+    r"|\[(?:개정|신설|삭제|제목개정|단서개정|전부개정|전문개정)[^\]]*?\]")
+
+
+def _strip_meta(text: str) -> str:
+    return re.sub(r"\s{2,}", " ", _META_NOISE_RE.sub("", text)).strip()
+
+
+def make_snippet(body: str, pos: int, span: int = 80) -> str:
+    if not body:
+        return ""
+    if pos < 0:
+        s = _strip_meta(body[: span * 2].replace("\n", " "))
+        return s + ("…" if len(body) > span * 2 else "")
+    start = max(0, pos - span)
+    end = min(len(body), pos + span)
+    s = _strip_meta(body[start:end].replace("\n", " "))
+    if start > 0:
+        s = "…" + s
+    if end < len(body):
+        s = s + "…"
+    return s
+
+
+def search(query: str, law_type: Optional[str] = None,
+           source: Optional[str] = None, limit: int = 10,
+           fuzzy: bool = False) -> list[dict]:
+    articles = load_index()
+    tokens = tokenize(query)
+    if not tokens:
+        return []
+    idf = compute_idf(tokens, articles)
+    scored: list[tuple[float, int, Article]] = []
+    for a in articles:
+        if law_type and a.law_type != law_type:
+            continue
+        if source and not source_match(source, a.source):
+            continue
+        sc, pos = score_article(a, tokens, idf, fuzzy=fuzzy)
+        if sc <= 0:
+            continue
+        scored.append((sc, pos, a))
+    scored.sort(key=lambda r: r[0], reverse=True)
+    return [{
+        "law_type": a.law_type,
+        "source": a.source,
+        "revision": a.revision,
+        "chapter": a.chapter,
+        "article": a.article,
+        "article_title": a.article_title,
+        "citation": a.citation,
+        "snippet": make_snippet(a.body, pos),
+        "score": round(sc, 2),
+    } for sc, pos, a in scored[:limit]]
+
+
 def cmd_build(_args: argparse.Namespace) -> None:
     build_index()
+
+
+def cmd_search(args: argparse.Namespace) -> None:
+    for r in search(args.query, law_type=args.law_type, source=args.source,
+                    limit=args.limit, fuzzy=args.fuzzy):
+        print(f"[{r['score']:>6}] {r['citation']}({r['article_title']})")
+        print(f"        {r['snippet']}")
 
 
 def main() -> None:
@@ -173,6 +338,13 @@ def main() -> None:
     sub = p.add_subparsers(dest="cmd", required=True)
     pb = sub.add_parser("build", help="data/laws/*.md → index.json")
     pb.set_defaults(func=cmd_build)
+    psr = sub.add_parser("search", help="조문 검색")
+    psr.add_argument("query")
+    psr.add_argument("--law-type", dest="law_type", default=None)
+    psr.add_argument("--source", default=None)
+    psr.add_argument("--limit", type=int, default=10)
+    psr.add_argument("--fuzzy", action="store_true")
+    psr.set_defaults(func=cmd_search)
     args = p.parse_args()
     args.func(args)
 
