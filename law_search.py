@@ -391,7 +391,7 @@ def list_laws(law_type: Optional[str] = None) -> list[dict]:
 
 CITATION_RE = re.compile(
     r"제(\d+)조(?:의(\d+))?(?:\s*제\d+항)?(?:\s*제\d+호)?(?:\s*\(([^)]{2,40})\))?")
-_DEF_PAREN_RE = re.compile(r"이하|약칭|['\"''""]|(?:이)?라\s*(?:한다|칭한다)")
+_DEF_PAREN_RE = re.compile('이하|약칭|[\'"‘’“”]|(?:이)?라\\s*(?:한다|칭한다)')
 
 
 def _title_key(s: str) -> str:

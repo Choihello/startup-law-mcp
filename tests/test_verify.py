@@ -45,3 +45,29 @@ def test_verify_multiple_citations(index):
     r = ls.verify_citation(text)
     statuses = [x["status"] for x in r]
     assert statuses == ["ok", "not_found"]
+
+
+def test_verify_curly_quote_paren_not_title(index):
+    # 곡선따옴표 부연 괄호도 제목이 아님 — 제목검증 제외
+    r = ls.verify_citation("테스트창업법 제2조(" + chr(0x201C) + "창업조항" + chr(0x201D) + ")에 따라")
+    assert r[0]["status"] == "ok"
+    assert r[0]["title_verified"] is False
+
+
+def test_verify_abbreviated_title_ok(index):
+    # 인용 제목이 실제 제목("세액감면 요건")의 부분이면 축약 인용으로 허용
+    r = ls.verify_citation("테스트창업법 시행령 제3조(세액감면)에 근거하여")
+    assert r[0]["status"] == "ok"
+    assert r[0]["title_verified"] is True
+
+
+def test_verify_variant_title_bigram_ok(index):
+    # 이표기("세액감면의 요건" vs 실제 "세액감면 요건") — bigram Jaccard >= 0.4 허용
+    r = ls.verify_citation("테스트창업법 시행령 제3조(세액감면의 요건)에 따라")
+    assert r[0]["status"] == "ok"
+
+
+def test_verify_modifier_appended_title_is_mismatch(index):
+    # 실제 제목("정의")에 수식어를 덧붙인 인용은 축약이 아니라 환각
+    r = ls.verify_citation("테스트창업법 제2조(정의 및 적용범위)에 따라")
+    assert r[0]["status"] == "content_mismatch"
