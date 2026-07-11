@@ -71,3 +71,30 @@ def test_sync_only_filter(env):
     result = law_sync.sync("dummy-oc", only="창업")
     assert result["count"] == 2
     assert result["errors"] == []   # '존재하지않는법'은 필터로 스킵됨
+
+
+def test_sync_isolates_search_stage_error(env, monkeypatch):
+    def boom(oc, query):
+        raise RuntimeError("network down")
+    monkeypatch.setattr(law_sync, "fetch_law_list", boom)
+    result = law_sync.sync("dummy-oc")
+    # 두 큐레이션 항목 모두 search 단계에서 격리되고 sync 자체는 완주
+    assert result["count"] == 0
+    assert len(result["errors"]) == 2
+    assert {e["stage"] for e in result["errors"]} == {"search"}
+
+
+def test_sync_isolates_fetch_stage_error(env, monkeypatch):
+    original = law_sync.fetch_law  # env fixture가 심어둔 fake
+    def flaky(oc, mst):
+        if mst == "222":
+            raise RuntimeError("timeout")
+        return original(oc, mst)
+    monkeypatch.setattr(law_sync, "fetch_law", flaky)
+    result = law_sync.sync("dummy-oc")
+    # 시행령 fetch 실패는 격리, 본법은 성공적으로 저장
+    assert result["count"] == 1
+    fetch_errors = [e for e in result["errors"] if e["stage"] == "fetch"]
+    assert len(fetch_errors) == 1
+    assert fetch_errors[0]["law"] == "테스트창업법 시행령"
+    assert {e["stage"] for e in result["errors"]} == {"fetch", "match"}
