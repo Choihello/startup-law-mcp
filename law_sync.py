@@ -68,6 +68,102 @@ def fetch_law(oc: str, mst: str) -> dict:
     return _get_json(url)
 
 
+def _content_of(v) -> str:
+    """'법종구분': {'content': '법률'} 또는 평문자열 양쪽 대응."""
+    if isinstance(v, dict):
+        return str(v.get("content", "")).strip()
+    return str(v or "").strip()
+
+
+def _jo_label(unit: dict) -> str:
+    """조문단위 → '제2조' / '제2조의2'."""
+    no = int(str(unit.get("조문번호", "0")).strip() or 0)
+    label = f"제{no}조"
+    sub = str(unit.get("조문가지번호", "") or "").strip()
+    if sub and sub != "0":
+        label += f"의{int(sub)}"
+    return label
+
+
+def _unit_text(unit: dict) -> str:
+    """조문단위 하나의 본문을 항·호·목까지 평탄화 (줄바꿈 구분)."""
+    parts = [str(unit.get("조문내용", "") or "").strip()]
+    for hang in _as_list(unit.get("항")):
+        parts.append(str(hang.get("항내용", "") or "").strip())
+        for ho in _as_list(hang.get("호")):
+            parts.append(str(ho.get("호내용", "") or "").strip())
+            for mok in _as_list(ho.get("목")):
+                parts.append(str(mok.get("목내용", "") or "").strip())
+    return "\n".join(p for p in parts if p)
+
+
+def _flatten_text(v) -> str:
+    """부칙내용 등 str/list 중첩 구조를 평탄화."""
+    if v is None:
+        return ""
+    if isinstance(v, str):
+        return v.strip()
+    if isinstance(v, list):
+        return "\n".join(t for t in (_flatten_text(x) for x in v) if t)
+    return str(v).strip()
+
+
+def law_to_markdown(law_json: dict) -> tuple[str, dict]:
+    """lawService.do JSON → (Format A 마크다운, 메타 dict)."""
+    law = law_json.get("법령") or {}
+    info = law.get("기본정보") or {}
+    name = str(info.get("법령명_한글") or info.get("법령명한글") or "").strip()
+    law_type = _content_of(info.get("법종구분")) or "법률"
+    prom_no = str(info.get("공포번호", "")).strip()
+    prom = _fmt_date(info.get("공포일자"))
+    eff = _fmt_date(info.get("시행일자"))
+    ministry = _content_of(info.get("소관부처"))
+
+    lines = [
+        f"# {name} ({law_type} 제{prom_no}호, 시행 {eff})",
+        "",
+        f"- 법종: {law_type}",
+        f"- 공포일자: {prom}",
+        f"- 시행일자: {eff}",
+        f"- 소관부처: {ministry}",
+        "",
+    ]
+    for unit in _as_list((law.get("조문") or {}).get("조문단위")):
+        if str(unit.get("조문여부", "")).strip() != "조문":
+            head = str(unit.get("조문내용", "") or "").strip()
+            if head:
+                lines += [f"## {head}", ""]
+            continue
+        title = str(unit.get("조문제목", "") or "").strip()
+        head = f"### {_jo_label(unit)}({title})" if title else f"### {_jo_label(unit)}"
+        lines += [head, ""]
+        eff_jo = _fmt_date(unit.get("조문시행일자"))
+        if eff_jo:
+            lines += [f"<시행 {eff_jo}>", ""]
+        body = _unit_text(unit)
+        if body:
+            lines += [body, ""]
+
+    for buchik in _as_list((law.get("부칙") or {}).get("부칙단위")):
+        b_no = str(buchik.get("부칙공포번호", "")).strip()
+        b_date = _fmt_date(buchik.get("부칙공포일자"))
+        text = _flatten_text(buchik.get("부칙내용"))
+        lines += [f"## 부칙 <제{b_no}호, {b_date}>", ""]
+        if text:
+            lines += [text, ""]
+
+    meta = {
+        "name": name,
+        "law_type": law_type,
+        "law_id": str(info.get("법령ID", "")).strip(),
+        "promulgation_no": prom_no,
+        "promulgation_date": prom,
+        "effective_date": eff,
+        "ministry": ministry,
+    }
+    return "\n".join(lines).rstrip() + "\n", meta
+
+
 def cmd_probe(args: argparse.Namespace) -> None:
     """API 응답 원본을 눈으로 확인 — 실제 JSON 구조가 fixture와 다르면 여기서 발견한다."""
     oc = _oc()
