@@ -1,0 +1,26 @@
+{
+ "fetched_at": "2026-07-10T00:00:00+00:00",
+ "count": 4,
+ "items": [
+  {"id": "1", "kind": "공고", "name": "2026년 예비창업패키지 예비창업자 모집 공고",
+   "category": "사업화", "summary": "혁신 기술 아이템을 보유한 예비창업자의 사업화를 지원합니다.",
+   "target": "예비창업자", "target_age": "만 39세 이하", "years": "예비", "region": "전국",
+   "apply_start": "2026-07-01", "apply_end": "2026-07-15",
+   "org": "창업진흥원", "contact": "1357", "url": "https://www.k-startup.go.kr/1"},
+  {"id": "2", "kind": "공고", "name": "2026년 초기창업패키지 창업기업 모집 공고",
+   "category": "사업화", "summary": "업력 3년 이내 초기 창업기업의 성장을 지원합니다.",
+   "target": "창업 3년 이내 기업", "target_age": "", "years": "3년 이내", "region": "전국",
+   "apply_start": "2026-07-01", "apply_end": "2026-08-30",
+   "org": "창업진흥원", "contact": "1357", "url": "https://www.k-startup.go.kr/2"},
+  {"id": "3", "kind": "공고", "name": "글로벌 액셀러레이팅 프로그램 참가기업 모집",
+   "category": "글로벌", "summary": "해외 진출을 준비하는 창업기업을 지원합니다.",
+   "target": "창업 7년 이내 기업", "target_age": "", "years": "7년 이내", "region": "전국",
+   "apply_start": "2026-08-01", "apply_end": "2026-08-20",
+   "org": "창업진흥원", "contact": "1357", "url": "https://www.k-startup.go.kr/3"},
+  {"id": "4", "kind": "공고", "name": "청년창업사관학교 16기 입교생 모집",
+   "category": "교육", "summary": "청년 창업자를 위한 사관학교 입교생을 모집합니다.",
+   "target": "만 39세 이하 청년 창업자", "target_age": "만 39세 이하", "years": "3년 이내", "region": "전국",
+   "apply_start": "2026-05-01", "apply_end": "2026-06-30",
+   "org": "중소벤처기업진흥공단", "contact": "055-751-9000", "url": "https://www.k-startup.go.kr/4"}
+ ]
+}

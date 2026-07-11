@@ -20,24 +20,28 @@ from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
 import law_search as ls
+import program_sync
+import programs as pg
 
-SERVER_INSTRUCTIONS = """한국 창업 관련 법령 검색·조회 서버입니다.
+SERVER_INSTRUCTIONS = """한국 창업 법령 + K-Startup 지원사업 통합 조회 서버입니다.
 
-창업자가 부딪히는 핵심 법령 — 중소기업창업 지원법, 벤처기업법, 벤처투자법,
-상법(회사), 부가가치세법, 조세특례제한법(창업 세액감면), 근로기준법,
-특허·상표법, 개인정보 보호법, 전자상거래법 등 — 과 그 시행령·시행규칙의
-조문을 다룹니다.
+두 축을 다룹니다:
+1) 창업 법령 — 중소기업창업 지원법, 벤처기업법, 조세특례제한법(창업 세액감면),
+   근로기준법, 특허·상표법, 개인정보 보호법 등 50개 문서 8,000+ 조문
+2) K-Startup 지원사업 — 예비창업패키지·초기창업패키지·TIPS 등 사업소개와
+   현재 모집 공고(모집기간·지원대상·신청방법·D-day)
 
-사용자가 창업·법인설립·세액감면·고용·지식재산·온라인 판매의 법적 근거를
-물으면 반드시 이 서버의 도구를 사용하세요:
-- search_law: 자연어 조문 검색 — 가장 먼저 사용
-- get_article: 법령명 + 조문번호로 본문 전체 조회
-- list_laws: 인덱싱된 법령 목록
-- verify_citation: 답변·문서에 인용된 "○○법 제○조"의 실재 여부 검증
-- find_references: 조문의 정방향·역방향 인용 관계
+도구 선택:
+- 지원사업·공고·모집·신청 질문("예비창업자 지원사업 뭐 있어?", "예비창업패키지
+  지금 신청 되나?") → search_program / get_program / list_open_programs 먼저
+- 법령·조문·자격요건의 법적 근거 질문 → search_law → get_article
+- 인용 실재 검증 → verify_citation, 조문 인용 관계 → find_references
+- 결과에 스냅샷 경고(warning)가 오면 → sync_programs로 갱신
 
-인덱싱된 법령에 한하며, 법적 자문이 아닌 조문 참조 도구입니다.
-답변에는 조문 출처(citation)를 함께 제시하세요."""
+지원사업 자격요건의 법적 근거까지 물으면 두 축을 함께 사용해 통합 답변하세요
+(예: 예비창업패키지 공고 + 중소기업창업 지원법의 창업자 정의 조문).
+답변에는 출처(조문 citation 또는 공고 url)를 제시하고, 신청 전 K-Startup
+원문 공고 확인을 안내하세요. 법적 자문이 아닌 참조 도구입니다."""
 
 
 def register_tools(mcp: FastMCP) -> None:
@@ -118,6 +122,72 @@ def register_tools(mcp: FastMCP) -> None:
         """
         return ls.find_references(source, article, limit=limit,
                                   include_mermaid=include_mermaid)
+
+    @mcp.tool()
+    def search_program(query: str, status: Optional[str] = None,
+                       include_closed: bool = False, limit: int = 10) -> dict:
+        """K-Startup 지원사업(공고+사업소개) 검색 — 지원사업 질문의 첫 진입점.
+
+        예: "예비창업자 지원", "청년 창업 자금", "글로벌 진출", "R&D 지원".
+
+        Args:
+            query: 자연어 검색어
+            status: 공고 상태 필터 (open/closing_soon/upcoming/closed).
+                지정 시 공고만 반환 (사업소개 제외).
+            include_closed: 마감 공고 포함 여부 (기본 False)
+            limit: 반환 결과 수 (기본 10)
+
+        Returns:
+            {"results": [{kind, name, status?, d_day?, target, apply_end, url, ...}],
+             "warning": 스냅샷 노후 경고 또는 None}
+        """
+        return pg.search_programs(query, status=status,
+                                  include_closed=include_closed, limit=limit)
+
+    @mcp.tool()
+    def get_program(name: str) -> dict:
+        """지원사업 이름 부분일치 상세 조회 (전체 필드, 최대 5건).
+
+        "예비창업패키지가 뭔데?" 같은 제도 질문에 사업소개+현재 공고를 함께 반환.
+
+        Args:
+            name: 사업명 부분일치 (예: "예비창업패키지", "TIPS")
+        """
+        return pg.get_program(name)
+
+    @mcp.tool()
+    def list_open_programs(limit: int = 20) -> dict:
+        """지금 모집 중·마감 임박·모집 예정인 공고 목록 (마감일 순, D-day 포함).
+
+        "지금 신청할 수 있는 지원사업 뭐 있어?"에 사용.
+
+        Args:
+            limit: 반환 결과 수 (기본 20)
+        """
+        return pg.list_open_programs(limit=limit)
+
+    @mcp.tool()
+    def sync_programs() -> dict:
+        """K-Startup에서 지원사업 공고·사업소개를 다시 받아 스냅샷 갱신.
+
+        결과의 warning이 스냅샷 노후를 알리거나 사용자가 "지원사업 최신으로
+        받아줘"라고 요청할 때 호출. 데이터만 갱신되므로 재시작이 필요 없습니다.
+        환경변수 DATA_GO_KR_KEY(공공데이터포털 인증키)가 필요합니다.
+        """
+        import os
+
+        key = os.environ.get("DATA_GO_KR_KEY", "").strip()
+        if not key:
+            return {"status": "error",
+                    "message": "환경변수 DATA_GO_KR_KEY가 없습니다. data.go.kr에서 "
+                               "'창업진흥원_K-Startup 조회서비스' 활용신청 후 "
+                               "인증키(Decoding)를 설정하세요."}
+        try:
+            result = program_sync.sync(key)
+        except Exception as e:  # noqa: BLE001 — 도구 표면에서 원인 전달
+            return {"status": "error", "message": f"동기화 실패: {e}"}
+        pg.invalidate_cache()
+        return {"status": "ok", "restart_required": False, **result}
 
 
 mcp = FastMCP("startup-law", instructions=SERVER_INSTRUCTIONS)

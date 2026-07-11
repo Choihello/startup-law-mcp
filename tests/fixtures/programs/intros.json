@@ -1,0 +1,16 @@
+{
+ "fetched_at": "2026-07-10T00:00:00+00:00",
+ "count": 2,
+ "items": [
+  {"id": "i1", "kind": "사업소개", "name": "예비창업패키지",
+   "category": "사업화", "summary": "예비창업자에게 사업화 자금(최대 1억원)과 창업교육·멘토링을 지원하는 제도입니다.",
+   "target": "예비창업자", "target_age": "", "years": "", "region": "",
+   "apply_start": "", "apply_end": "",
+   "org": "창업진흥원", "contact": "1357", "url": "https://www.k-startup.go.kr/intro1"},
+  {"id": "i2", "kind": "사업소개", "name": "TIPS(민간투자주도형 기술창업지원)",
+   "category": "기술창업", "summary": "민간 운영사 투자와 연계해 기술창업팀에 R&D 자금을 지원하는 제도입니다.",
+   "target": "기술창업팀", "target_age": "", "years": "", "region": "",
+   "apply_start": "", "apply_end": "",
+   "org": "중소벤처기업부", "contact": "", "url": "https://www.k-startup.go.kr/intro2"}
+ ]
+}
