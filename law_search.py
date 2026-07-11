@@ -389,6 +389,104 @@ def list_laws(law_type: Optional[str] = None) -> list[dict]:
     return sorted(by_src.values(), key=lambda x: (x["law_type"], x["source"]))
 
 
+CITATION_RE = re.compile(
+    r"제(\d+)조(?:의(\d+))?(?:\s*제\d+항)?(?:\s*제\d+호)?(?:\s*\(([^)]{2,40})\))?")
+_DEF_PAREN_RE = re.compile(r"이하|약칭|['\"''""]|(?:이)?라\s*(?:한다|칭한다)")
+
+
+def _title_key(s: str) -> str:
+    return re.sub(r"[\s·․.,'\"()\[\]「」]", "", _nfc(s))
+
+
+def _title_matches(cited: str, actual: str) -> bool:
+    """인용 제목이 실제 제목의 부분(축약)이면 일치, 수식어를 덧붙였으면 환각.
+    그 외 음절 bigram Jaccard ≥ 0.4면 이표기로 간주."""
+    c, a = _title_key(cited), _title_key(actual)
+    if not c or not a:
+        return True
+    if c == a or c in a:
+        return True
+    cb, ab = set(_bigrams(c)), set(_bigrams(a))
+    if not cb or not ab:
+        return True
+    return len(cb & ab) / len(cb | ab) >= 0.4
+
+
+def _article_range_for(source_nfc: str, articles: list[Article]) -> str:
+    nos = sorted({(a.article_no, a.article_sub) for a in articles
+                  if source_nfc in a.source and not a.is_supplementary})
+    if not nos:
+        return "(해당 법령 없음)"
+    def lab(t):
+        return f"제{t[0]}조" + (f"의{t[1]}" if t[1] else "")
+    return f"{lab(nos[0])} ~ {lab(nos[-1])}, 총 {len(nos)}개"
+
+
+def verify_citation(text: str) -> list[dict]:
+    """텍스트 내 모든 '{법령명} 제N조[의M][(제목)]' 인용을 인덱스로 교차검증."""
+    text_nfc = _nfc(text)
+    articles = load_index()
+    known_sources = sorted({a.source for a in articles}, key=len, reverse=True)
+
+    def nearest_source(prefix: str) -> Optional[str]:
+        best, best_pos = None, -1
+        for src in known_sources:
+            pos = prefix.rfind(src)
+            if pos > best_pos or (pos == best_pos and best and len(src) > len(best)):
+                best_pos, best = pos, src
+        return best if best_pos >= 0 else None
+
+    results = []
+    for m in CITATION_RE.finditer(text_nfc):
+        prefix = text_nfc[max(0, m.start() - 80): m.start()]
+        matched_src = nearest_source(prefix)
+        art = f"제{m.group(1)}조" + (f"의{m.group(2)}" if m.group(2) else "")
+        full_cite = text_nfc[m.start(): m.end()]
+        if not matched_src:
+            results.append({
+                "citation": full_cite,
+                "status": "unknown_source",
+                "message": "직전 텍스트에서 인덱싱된 법령명을 찾지 못함",
+            })
+            continue
+        no, sub = int(m.group(1)), int(m.group(2) or 0)
+        cand = [a for a in articles
+                if a.source == matched_src and a.article_no == no
+                and a.article_sub == sub and not a.is_supplementary]
+        hit = cand[0] if cand else None
+        if hit:
+            cited_title = (m.group(3) or "").strip()
+            check_title = bool(cited_title) and not _DEF_PAREN_RE.search(cited_title)
+            if check_title and not _title_matches(cited_title, hit.article_title):
+                results.append({
+                    "citation": f"{matched_src} {art}",
+                    "raw_match": full_cite,
+                    "status": "content_mismatch",
+                    "cited_title": cited_title,
+                    "actual_title": hit.article_title,
+                    "message": f"{matched_src} {art}의 실제 제목은 '{hit.article_title}' — "
+                               f"인용의 '{cited_title}'와 불일치 (내용 환각 가능)",
+                })
+            else:
+                results.append({
+                    "citation": f"{matched_src} {art}",
+                    "raw_match": full_cite,
+                    "status": "ok",
+                    "article_title": hit.article_title,
+                    "title_verified": check_title,
+                    "body_excerpt": _strip_meta(hit.body[:250].replace("\n", " "))[:150],
+                })
+        else:
+            results.append({
+                "citation": f"{matched_src} {art}",
+                "raw_match": full_cite,
+                "status": "not_found",
+                "message": f"{matched_src}에 {art} 없음 "
+                           f"(실재: {_article_range_for(matched_src, articles)})",
+            })
+    return results
+
+
 def cmd_build(_args: argparse.Namespace) -> None:
     build_index()
 
@@ -404,6 +502,12 @@ def cmd_get(args: argparse.Namespace) -> None:
     for h in get_article(args.source, args.article):
         print(f"== {h['citation']}({h['article_title']}) [{h['revision']}]")
         print(h["body"])
+
+
+def cmd_verify(args: argparse.Namespace) -> None:
+    for r in verify_citation(args.text):
+        print(f"[{r['status']}] {r['citation']}" +
+              (f" — {r.get('message', '')}" if r.get("message") else ""))
 
 
 def main() -> None:
@@ -422,6 +526,9 @@ def main() -> None:
     pg.add_argument("source")
     pg.add_argument("article")
     pg.set_defaults(func=cmd_get)
+    pv = sub.add_parser("verify", help="조문 인용 실재성 검증")
+    pv.add_argument("text")
+    pv.set_defaults(func=cmd_verify)
     args = p.parse_args()
     args.func(args)
 
