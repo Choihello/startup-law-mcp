@@ -68,6 +68,52 @@ def fetch_page(key: str, target: str, page: int = 1, per_page: int = 100) -> dic
     return _get_json(f"{API_BASE}/{ENDPOINTS[target]}?{qs}")
 
 
+def normalize_announcement(raw: dict) -> dict:
+    """사업공고 원시 아이템 → 표준 레코드 (필드명: 2026-07-11 probe 확정)."""
+    return {
+        "id": _s(raw.get("pbanc_sn")),
+        "kind": "공고",
+        "name": _s(raw.get("biz_pbanc_nm") or raw.get("intg_pbanc_biz_nm")),
+        "category": _s(raw.get("supt_biz_clsfc")),
+        "summary": _s(raw.get("pbanc_ctnt")),
+        "target": _s(raw.get("aply_trgt_ctnt") or raw.get("aply_trgt")),
+        "target_age": _s(raw.get("biz_trgt_age")),
+        "years": _s(raw.get("biz_enyy")),
+        "region": _s(raw.get("supt_regin")),
+        "apply_start": _date_norm(raw.get("pbanc_rcpt_bgng_dt")),
+        "apply_end": _date_norm(raw.get("pbanc_rcpt_end_dt")),
+        "org": _s(raw.get("pbanc_ntrp_nm") or raw.get("biz_prch_dprt_nm")),
+        "contact": _s(raw.get("prch_cnpl_no")),
+        "url": _s(raw.get("detl_pg_url") or raw.get("biz_gdnc_url")),
+    }
+
+
+def normalize_intro(raw: dict) -> dict:
+    """사업소개 원시 아이템 → 표준 레코드 (필드명: 2026-07-11 probe 확정).
+
+    소개에는 기관·연락처·지역 필드가 없어 빈 값. 소개글·특징·지원내용·예산은
+    summary 한 필드에 줄바꿈으로 합쳐 보존한다.
+    """
+    parts = [_s(raw.get("supt_biz_intrd_info")), _s(raw.get("supt_biz_chrct")),
+             _s(raw.get("biz_supt_ctnt")), _s(raw.get("biz_supt_bdgt_info"))]
+    return {
+        "id": _s(raw.get("id")),
+        "kind": "사업소개",
+        "name": _s(raw.get("supt_biz_titl_nm")),
+        "category": _s(raw.get("biz_category_cd")),
+        "summary": "\n".join(p for p in parts if p),
+        "target": _s(raw.get("biz_supt_trgt_info")),
+        "target_age": "",
+        "years": "",
+        "region": "",
+        "apply_start": "",
+        "apply_end": "",
+        "org": "",
+        "contact": "",
+        "url": _s(raw.get("detl_pg_url")),
+    }
+
+
 def cmd_probe(args: argparse.Namespace) -> None:
     """원시 응답을 눈으로 확인 — 필드명·엔벨로프가 코드 가정과 다르면 여기서 발견."""
     key = _key()
