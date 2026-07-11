@@ -25,3 +25,12 @@ def test_refs_mermaid(index):
     r = ls.find_references("테스트창업법", "제2조", include_mermaid=True)
     assert r["mermaid"].startswith("flowchart LR")
     assert "테스트창업법 제2조" in r["mermaid"]
+
+
+def test_refs_outgoing_prefix_sibling_not_misattributed(index):
+    # 시행령 조문이 모법("테스트창업법")을 인용하면 모법 조문으로 cross_law 연결돼야 하며,
+    # 이름 접두 관계인 시행령 자신(제2조)으로 오귀속되면 안 된다
+    r = ls.find_references("테스트창업법 시행령", "제3조")
+    out = {(o["scope"], o["citation"]) for o in r["outgoing"]}
+    assert ("cross_law", "테스트창업법 제2조") in out
+    assert ("same_law", "테스트창업법 시행령 제2조") not in out

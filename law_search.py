@@ -534,9 +534,14 @@ def find_references(source: str, article: str, limit: int = 20,
             continue
         seen.add(key)
         consumed.append((m.start(), m.end()))
+        # 정확일치(공백 무시) 우선 — "테스트창업법"이 "테스트창업법 시행령"으로
+        # 오귀속되는 접두 충돌 방지. 정확일치가 없을 때만 substring 폴백.
         matched = next((s for s in known_sources
-                        if cited_name in s.replace(" ", "") or s.replace(" ", "") in cited_name),
-                       None)
+                        if s.replace(" ", "") == cited_name), None)
+        if matched is None:
+            matched = next((s for s in known_sources
+                            if cited_name in s.replace(" ", "")
+                            or s.replace(" ", "") in cited_name), None)
         if matched:
             cited = next((a for a in articles
                           if a.source == matched and a.article_no == c_no
