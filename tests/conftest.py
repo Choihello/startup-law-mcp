@@ -14,3 +14,12 @@ def index(monkeypatch):
         arts.extend(ls.parse_md(p))
     monkeypatch.setattr(ls, "_INDEX_CACHE", arts)
     return arts
+
+
+@pytest.fixture
+def programs_index(monkeypatch):
+    import programs
+
+    monkeypatch.setattr(programs, "PROGRAMS_DIR", FIXTURES / "programs")
+    monkeypatch.setattr(programs, "_CACHE", None)
+    return programs
