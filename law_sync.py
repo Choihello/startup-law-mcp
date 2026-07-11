@@ -164,6 +164,56 @@ def law_to_markdown(law_json: dict) -> tuple[str, dict]:
     return "\n".join(lines).rstrip() + "\n", meta
 
 
+def sync(oc: str, only: str | None = None) -> dict:
+    """laws.json 큐레이션 목록 전체를 동기화. 법령 단위 오류 격리."""
+    curation = json.loads((DATA / "laws.json").read_text(encoding="utf-8"))
+    LAWS_DIR.mkdir(parents=True, exist_ok=True)
+    sources: list[dict] = []
+    errors: list[dict] = []
+
+    for entry in curation["laws"]:
+        name = entry["name"]
+        if only and only not in name:
+            continue
+        wanted = [name]
+        if entry.get("include_subordinate", True):
+            wanted += [f"{name} 시행령", f"{name} 시행규칙"]
+        try:
+            hits = fetch_law_list(oc, name)
+        except Exception as e:  # noqa: BLE001 — 법령 단위 격리
+            errors.append({"law": name, "stage": "search", "error": str(e)})
+            continue
+        by_name = {str(h.get("법령명한글", "")).strip(): h for h in hits}
+        for w in wanted:
+            hit = by_name.get(w)
+            if not hit:
+                if w == name:  # 본법 미발견만 오류 — 시행령·규칙은 없을 수 있음
+                    errors.append({"law": w, "stage": "match",
+                                   "error": "법령 목록에서 정확일치 결과 없음"})
+                continue
+            mst = str(hit.get("법령일련번호", "")).strip()
+            try:
+                md, meta = law_to_markdown(fetch_law(oc, mst))
+                fname = f"{meta['law_type']}_{meta['name']}.md"
+                (LAWS_DIR / fname).write_text(md, encoding="utf-8")
+                meta.update({"file": fname, "mst": mst,
+                             "group": entry.get("group", ""), "origin": "law.go.kr"})
+                sources.append(meta)
+                print(f"  ✓ {fname}")
+            except Exception as e:  # noqa: BLE001
+                errors.append({"law": w, "stage": "fetch", "error": str(e)})
+
+    manifest = {"count": len(sources), "sources": sources, "errors": errors}
+    (DATA / "sources.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"동기화 완료: {len(sources)}개 문서, 오류 {len(errors)}건")
+    return manifest
+
+
+def cmd_sync(args: argparse.Namespace) -> None:
+    sync(_oc(), only=args.only)
+
+
 def cmd_probe(args: argparse.Namespace) -> None:
     """API 응답 원본을 눈으로 확인 — 실제 JSON 구조가 fixture와 다르면 여기서 발견한다."""
     oc = _oc()
@@ -185,6 +235,9 @@ def main() -> None:
     pp.add_argument("--query", required=True)
     pp.add_argument("--full", action="store_true", help="첫 결과의 본문 JSON까지 저장")
     pp.set_defaults(func=cmd_probe)
+    ps = sub.add_parser("sync", help="laws.json 전체 동기화")
+    ps.add_argument("--only", default=None, help="법령명 부분일치 필터")
+    ps.set_defaults(func=cmd_sync)
     args = p.parse_args()
     args.func(args)
 
