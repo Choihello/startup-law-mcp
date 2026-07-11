@@ -487,6 +487,159 @@ def verify_citation(text: str) -> list[dict]:
     return results
 
 
+_SAME_LAW_CITE_RE = re.compile(r"(?<![가-힣A-Za-z0-9_])제(\d+)조(?:의(\d+))?")
+_EXTERNAL_CITE_RE = re.compile(
+    r"(?:「([^」\n]{2,40}?)」"
+    r"|((?:[가-힣]+\s?){1,6}?(?:법률|시행령|시행규칙|법|규칙|령)))"
+    r"\s*제(\d+)조(?:의(\d+))?")
+
+
+def _around(body: str, pos: int, span: int = 60) -> str:
+    start = max(0, pos - span)
+    end = min(len(body), pos + span)
+    s = _strip_meta(body[start:end].replace("\n", " "))
+    return ("…" if start > 0 else "") + s + ("…" if end < len(body) else "")
+
+
+def find_references(source: str, article: str, limit: int = 20,
+                    include_mermaid: bool = False) -> dict:
+    """대상 조문의 정방향(outgoing)·역방향(incoming) 인용 관계.
+
+    scope: same_law(같은 법령 안) / cross_law(인덱스 내 다른 법령) /
+    external(인덱스에 없는 법령).
+    """
+    parsed = _parse_article_token(article)
+    if parsed is None:
+        return {"error": f"조문 토큰 해석 불가: {article!r}"}
+    no, sub = parsed
+    articles = load_index()
+    src_ok = _source_selector(source, articles)
+    targets = [a for a in articles
+               if src_ok(a.source) and a.article_no == no and a.article_sub == sub]
+    if not targets:
+        return {"error": f"대상 조문 없음: {source} 제{no}조" + (f"의{sub}" if sub else "")}
+    targets.sort(key=lambda a: a.is_supplementary)  # 본칙 우선
+    target = targets[0]
+    known_sources = sorted({a.source for a in articles}, key=len, reverse=True)
+
+    # ===== OUTGOING =====
+    outgoing: list[dict] = []
+    seen: set[tuple] = set()
+    consumed: list[tuple[int, int]] = []
+    for m in _EXTERNAL_CITE_RE.finditer(target.body):
+        cited_name = re.sub(r"\s+", "", (m.group(1) or m.group(2) or ""))
+        c_no, c_sub = int(m.group(3)), int(m.group(4) or 0)
+        key = (cited_name, c_no, c_sub)
+        if key in seen:
+            continue
+        seen.add(key)
+        consumed.append((m.start(), m.end()))
+        matched = next((s for s in known_sources
+                        if cited_name in s.replace(" ", "") or s.replace(" ", "") in cited_name),
+                       None)
+        if matched:
+            cited = next((a for a in articles
+                          if a.source == matched and a.article_no == c_no
+                          and a.article_sub == c_sub and not a.is_supplementary), None)
+            if cited:
+                scope = "same_law" if matched == target.source else "cross_law"
+                outgoing.append({
+                    "scope": scope,
+                    "citation": cited.citation,
+                    "article_title": cited.article_title,
+                    "snippet": _strip_meta(cited.body[:200].replace("\n", " "))[:120],
+                })
+                continue
+        outgoing.append({
+            "scope": "external",
+            "citation": f"{cited_name} 제{c_no}조" + (f"의{c_sub}" if c_sub else ""),
+            "note": "인덱스에 없는 외부 법령 또는 조문 매칭 실패",
+        })
+    for m in _SAME_LAW_CITE_RE.finditer(target.body):
+        if any(s <= m.start() < e for s, e in consumed):
+            continue
+        c_no, c_sub = int(m.group(1)), int(m.group(2) or 0)
+        if (c_no, c_sub) == (no, sub):
+            continue
+        key = (target.source, c_no, c_sub)
+        if key in seen:
+            continue
+        seen.add(key)
+        cited = next((a for a in articles
+                      if a.source == target.source and a.article_no == c_no
+                      and a.article_sub == c_sub and not a.is_supplementary), None)
+        if cited:
+            outgoing.append({
+                "scope": "same_law",
+                "citation": cited.citation,
+                "article_title": cited.article_title,
+                "snippet": _strip_meta(cited.body[:200].replace("\n", " "))[:120],
+            })
+
+    # ===== INCOMING =====
+    incoming: list[dict] = []
+    for a in articles:
+        if a is target or a.is_supplementary:
+            continue
+        if a.source == target.source:
+            for m in _SAME_LAW_CITE_RE.finditer(a.body):
+                if int(m.group(1)) == no and int(m.group(2) or 0) == sub:
+                    incoming.append({
+                        "scope": "same_law",
+                        "citation": a.citation,
+                        "article_title": a.article_title,
+                        "snippet": _around(a.body, m.start()),
+                    })
+                    break
+        else:
+            if target.source not in a.body:
+                continue
+            pos = 0
+            while True:
+                idx = a.body.find(target.source, pos)
+                if idx < 0:
+                    break
+                after = a.body[idx + len(target.source): idx + len(target.source) + 60]
+                m = re.match(r"\s*제(\d+)조(?:의(\d+))?", after)
+                if m and int(m.group(1)) == no and int(m.group(2) or 0) == sub:
+                    incoming.append({
+                        "scope": "cross_law",
+                        "citation": a.citation,
+                        "article_title": a.article_title,
+                        "snippet": _around(a.body, idx),
+                    })
+                    break
+                pos = idx + len(target.source)
+
+    result = {
+        "target": {
+            "source": target.source,
+            "article": target.article,
+            "article_title": target.article_title,
+            "citation": target.citation,
+        },
+        "outgoing": outgoing[:limit],
+        "incoming": incoming[:limit],
+        "counts": {"outgoing": len(outgoing), "incoming": len(incoming)},
+    }
+    if include_mermaid:
+        result["mermaid"] = _mermaid_graph(result)
+    return result
+
+
+def _mermaid_graph(result: dict) -> str:
+    """incoming → target → outgoing flowchart."""
+    lines = ["flowchart LR"]
+    tid = "T"
+    t = result["target"]
+    lines.append(f'    {tid}["{t["citation"]}({t["article_title"]})"]')
+    for i, ref in enumerate(result["incoming"]):
+        lines.append(f'    I{i}["{ref["citation"]}"] --> {tid}')
+    for i, ref in enumerate(result["outgoing"]):
+        lines.append(f'    {tid} --> O{i}["{ref["citation"]}"]')
+    return "\n".join(lines)
+
+
 def cmd_build(_args: argparse.Namespace) -> None:
     build_index()
 
@@ -510,6 +663,11 @@ def cmd_verify(args: argparse.Namespace) -> None:
               (f" — {r.get('message', '')}" if r.get("message") else ""))
 
 
+def cmd_refs(args: argparse.Namespace) -> None:
+    r = find_references(args.source, args.article)
+    print(json.dumps(r, ensure_ascii=False, indent=1))
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -529,6 +687,10 @@ def main() -> None:
     pv = sub.add_parser("verify", help="조문 인용 실재성 검증")
     pv.add_argument("text")
     pv.set_defaults(func=cmd_verify)
+    pr = sub.add_parser("refs", help="조문 상호참조")
+    pr.add_argument("source")
+    pr.add_argument("article")
+    pr.set_defaults(func=cmd_refs)
     args = p.parse_args()
     args.func(args)
 
