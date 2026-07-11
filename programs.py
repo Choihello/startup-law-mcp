@@ -92,7 +92,7 @@ _SEARCH_FIELDS = ("name", "category", "summary", "target", "region", "org")
 
 
 def _searchable_text(item: dict) -> str:
-    return " ".join(str(item.get(k, "")) for k in _SEARCH_FIELDS)
+    return ls._nfc(" ".join(str(item.get(k, "")) for k in _SEARCH_FIELDS))
 
 
 def _result_row(item: dict, status: Optional[str], today: date,
@@ -143,7 +143,7 @@ def search_programs(query: str, status: Optional[str] = None,
             sc = 0.0
             pos = -1
             for tok in tokens:
-                if tok in str(it.get("name", "")):
+                if tok in ls._nfc(str(it.get("name", ""))):
                     sc += 5.0
                 cnt = text.count(tok)
                 if cnt:

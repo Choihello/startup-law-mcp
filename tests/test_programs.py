@@ -27,6 +27,7 @@ def test_search_excludes_closed_by_default(programs_index):
     rows = programs.search_programs("창업사관학교", include_closed=True, today=T)["results"]
     assert len(rows) == 1
     assert rows[0]["status"] == "closed"
+    assert "d_day" not in rows[0]  # closed 공고에는 d_day 미포함
 
 
 def test_search_status_filter_announcements_only(programs_index):
@@ -59,3 +60,41 @@ def test_staleness_warning():
     assert w is not None and "10일" in w
     assert programs.staleness_warning({"fetched_at": "2026-07-10T00:00:00+00:00"}, T) is None
     assert "없습니다" in programs.staleness_warning({}, T)
+
+
+def test_search_nfc_normalization(monkeypatch):
+    # NFD로 분해된 한글 데이터도 NFC 질의로 검색돼야 한다
+    import unicodedata
+
+    nfd_name = unicodedata.normalize("NFD", "예비창업패키지")
+    monkeypatch.setattr(programs, "_CACHE", {
+        "announcements": [{"id": "9", "kind": "공고", "name": nfd_name,
+                           "category": "", "summary": "", "target": "", "target_age": "",
+                           "years": "", "region": "", "org": "",
+                           "apply_start": "2026-07-01", "apply_end": "2026-08-30",
+                           "contact": "", "url": ""}],
+        "intros": [],
+        "fetched_at": "2026-07-10T00:00:00+00:00",
+    })
+    rows = programs.search_programs("예비창업패키지", today=T)["results"]
+    assert len(rows) == 1
+
+
+def test_staleness_boundary_and_older_side(monkeypatch, tmp_path):
+    # 두 스냅샷 중 더 오래된 쪽 기준으로, 정확히 7일 경과(경계)에서 경고
+    import json as _json
+
+    d = tmp_path / "programs"
+    d.mkdir()
+    (d / "announcements.json").write_text(_json.dumps(
+        {"fetched_at": "2026-07-04T00:00:00+00:00", "count": 0, "items": []}),
+        encoding="utf-8")
+    (d / "intros.json").write_text(_json.dumps(
+        {"fetched_at": "2026-07-09T00:00:00+00:00", "count": 0, "items": []}),
+        encoding="utf-8")
+    monkeypatch.setattr(programs, "PROGRAMS_DIR", d)
+    monkeypatch.setattr(programs, "_CACHE", None)
+    data = programs.load_programs()
+    assert data["fetched_at"] == "2026-07-04T00:00:00+00:00"
+    w = programs.staleness_warning(data, T)
+    assert w is not None and "7일" in w
