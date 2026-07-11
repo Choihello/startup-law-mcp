@@ -86,14 +86,20 @@ def _jo_label(unit: dict) -> str:
 
 
 def _unit_text(unit: dict) -> str:
-    """조문단위 하나의 본문을 항·호·목까지 평탄화 (줄바꿈 구분)."""
-    parts = [str(unit.get("조문내용", "") or "").strip()]
+    """조문단위 하나의 본문을 항·호·목까지 평탄화 (줄바꿈 구분).
+
+    실 API 응답은 항/호/목 내용이 평문자열일 때도 있고(단순 조문),
+    다단 줄바꿈이 있는 목(예: 세율표처럼 가./나. 아래 1)/2) 소항목이 있는 경우)은
+    문자열이 아니라 중첩 list로 온다. str()로 바로 감싸면 "['...', '...']" 같은
+    파이썬 repr이 그대로 본문에 박히므로, 부칙내용과 동일하게 _flatten_text로
+    문자열/리스트 양쪽을 재귀적으로 평탄화한다."""
+    parts = [_flatten_text(unit.get("조문내용"))]
     for hang in _as_list(unit.get("항")):
-        parts.append(str(hang.get("항내용", "") or "").strip())
+        parts.append(_flatten_text(hang.get("항내용")))
         for ho in _as_list(hang.get("호")):
-            parts.append(str(ho.get("호내용", "") or "").strip())
+            parts.append(_flatten_text(ho.get("호내용")))
             for mok in _as_list(ho.get("목")):
-                parts.append(str(mok.get("목내용", "") or "").strip())
+                parts.append(_flatten_text(mok.get("목내용")))
     return "\n".join(p for p in parts if p)
 
 
