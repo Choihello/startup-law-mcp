@@ -71,3 +71,29 @@ def test_verify_modifier_appended_title_is_mismatch(index):
     # 실제 제목("정의")에 수식어를 덧붙인 인용은 축약이 아니라 환각
     r = ls.verify_citation("테스트창업법 제2조(정의 및 적용범위)에 따라")
     assert r[0]["status"] == "content_mismatch"
+
+
+def test_article_range_exact_source(index):
+    # 시행령 조문(제2조·제3조)이 본법 범위에 혼입되면 4개가 된다
+    rng = ls._article_range_for("테스트창업법", ls.load_index())
+    assert "총 3개" in rng
+
+
+def test_verify_inferred_source(index):
+    r = ls.verify_citation("테스트창업법은 창업 지원의 근간이 되는 법률이다. 한편 여기서 제2조에 따르면")
+    assert r[0]["status"] == "ok"
+    assert r[0].get("source_inference") == "inferred"
+
+
+def test_verify_explicit_has_no_inference_flag(index):
+    r = ls.verify_citation("테스트창업법 제2조에 따라")
+    assert r[0]["status"] == "ok"
+    assert "source_inference" not in r[0]
+
+
+def test_verify_ambiguous_source(index):
+    text = "테스트창업법과 그 하위법령인 테스트창업법 시행령을 함께 검토한다. 이때 제2조는"
+    r = ls.verify_citation(text)
+    assert r[0]["status"] == "ambiguous_source"
+    assert "테스트창업법" in r[0]["candidates"]
+    assert "테스트창업법 시행령" in r[0]["candidates"]

@@ -440,7 +440,7 @@ def _title_matches(cited: str, actual: str) -> bool:
 
 def _article_range_for(source_nfc: str, articles: list[Article]) -> str:
     nos = sorted({(a.article_no, a.article_sub) for a in articles
-                  if source_nfc in a.source and not a.is_supplementary})
+                  if a.source == source_nfc and not a.is_supplementary})
     if not nos:
         return "(해당 법령 없음)"
     def lab(t):
@@ -449,23 +449,40 @@ def _article_range_for(source_nfc: str, articles: list[Article]) -> str:
 
 
 def verify_citation(text: str) -> list[dict]:
-    """텍스트 내 모든 '{법령명} 제N조[의M][(제목)]' 인용을 인덱스로 교차검증."""
+    """텍스트 내 모든 '{법령명} 제N조[의M][(제목)]' 인용을 인덱스로 교차검증.
+
+    status: ok / content_mismatch / not_found / unknown_source / ambiguous_source.
+    법령명이 인용에 직접 붙지 않은 경우(간격 3자 이상) source_inference="inferred"를
+    표기하고, 직전 문맥에 서로 다른 법령명이 복수면 ambiguous_source로 검증을 보류한다.
+    """
     text_nfc = _nfc(text)
     articles = load_index()
     known_sources = sorted({a.source for a in articles}, key=len, reverse=True)
 
-    def nearest_source(prefix: str) -> Optional[str]:
-        best, best_pos = None, -1
+    def nearest_source(prefix: str):
+        """(가장 가까운 법령명, 인용까지 간격, 문맥 내 후보 법령들)."""
+        spans = []
         for src in known_sources:
-            pos = prefix.rfind(src)
-            if pos > best_pos or (pos == best_pos and best and len(src) > len(best)):
-                best_pos, best = pos, src
-        return best if best_pos >= 0 else None
+            start = 0
+            while True:
+                pos = prefix.find(src, start)
+                if pos < 0:
+                    break
+                spans.append((pos, pos + len(src), src))
+                start = pos + 1
+        # 다른 매칭 안에 완전히 포함된 이름(예: 시행령명 내부의 모법명)은 제외
+        maximal = [s for s in spans
+                   if not any(o != s and o[0] <= s[0] and s[1] <= o[1] for o in spans)]
+        if not maximal:
+            return None, None, []
+        best = max(maximal, key=lambda s: (s[0], s[1] - s[0]))
+        gap = len(prefix) - best[1]
+        return best[2], gap, sorted({s[2] for s in maximal})
 
     results = []
     for m in CITATION_RE.finditer(text_nfc):
         prefix = text_nfc[max(0, m.start() - 80): m.start()]
-        matched_src = nearest_source(prefix)
+        matched_src, gap, candidates = nearest_source(prefix)
         art = f"제{m.group(1)}조" + (f"의{m.group(2)}" if m.group(2) else "")
         full_cite = text_nfc[m.start(): m.end()]
         if not matched_src:
@@ -473,6 +490,16 @@ def verify_citation(text: str) -> list[dict]:
                 "citation": full_cite,
                 "status": "unknown_source",
                 "message": "직전 텍스트에서 인덱싱된 법령명을 찾지 못함",
+            })
+            continue
+        explicit = gap is not None and gap <= 2
+        if not explicit and len(candidates) >= 2:
+            results.append({
+                "citation": full_cite,
+                "status": "ambiguous_source",
+                "candidates": candidates,
+                "message": "직전 문맥에 복수의 법령명이 있고 인용에 법령명이 직접 붙어 "
+                           "있지 않음 — 귀속 보류",
             })
             continue
         no, sub = int(m.group(1)), int(m.group(2) or 0)
@@ -484,7 +511,7 @@ def verify_citation(text: str) -> list[dict]:
             cited_title = (m.group(3) or "").strip()
             check_title = bool(cited_title) and not _DEF_PAREN_RE.search(cited_title)
             if check_title and not _title_matches(cited_title, hit.article_title):
-                results.append({
+                res = {
                     "citation": f"{matched_src} {art}",
                     "raw_match": full_cite,
                     "status": "content_mismatch",
@@ -492,24 +519,27 @@ def verify_citation(text: str) -> list[dict]:
                     "actual_title": hit.article_title,
                     "message": f"{matched_src} {art}의 실제 제목은 '{hit.article_title}' — "
                                f"인용의 '{cited_title}'와 불일치 (내용 환각 가능)",
-                })
+                }
             else:
-                results.append({
+                res = {
                     "citation": f"{matched_src} {art}",
                     "raw_match": full_cite,
                     "status": "ok",
                     "article_title": hit.article_title,
                     "title_verified": check_title,
                     "body_excerpt": _strip_meta(hit.body[:250].replace("\n", " "))[:150],
-                })
+                }
         else:
-            results.append({
+            res = {
                 "citation": f"{matched_src} {art}",
                 "raw_match": full_cite,
                 "status": "not_found",
                 "message": f"{matched_src}에 {art} 없음 "
                            f"(실재: {_article_range_for(matched_src, articles)})",
-            })
+            }
+        if not explicit:
+            res["source_inference"] = "inferred"
+        results.append(res)
     return results
 
 
