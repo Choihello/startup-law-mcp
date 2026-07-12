@@ -328,7 +328,7 @@ v1.0/v1.1 수동 실행은 여전히 가능하며, 자동 동기화는 변경이
   URL 저장 경계 정규화, 매니페스트 인덱싱+stale 표시, 입력 검증(`invalid_input`,
   `limit` 1~50), `verify_citation`에 `ambiguous_source` 추가, `data_status` 도구(10개째),
   CI(pytest, Windows/Linux)
-- **v1.3 창업 특화 (현재)** — 3도구 추가(총 13개): `delegation_map`(법률→시행령·
+- **v1.3 창업 특화** — 3도구 추가(총 13개): `delegation_map`(법률→시행령·
   시행규칙 위임 조문 자동 연결 + 정비 점검), `startup_stage_guide`(창업 6단계별
   핵심 조문·체크리스트·관련 지원사업 큐레이션, `data/stages.json` + 조문 실재성
   게이트 테스트로 보증), `check_effective_date`(조문 시행일·경과규정 확인)
