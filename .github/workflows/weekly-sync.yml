@@ -1,0 +1,74 @@
+name: weekly-sync
+on:
+  schedule:
+    - cron: "0 21 * * 0"   # 일 21:00 UTC = 월 06:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-dev.txt
+
+      - name: 법령 동기화 + 인덱스 빌드
+        env:
+          LAW_OC: ${{ secrets.LAW_OC }}
+          PYTHONUTF8: "1"
+        run: |
+          set -o pipefail
+          python law_sync.py sync 2>&1 | tee sync_law.log
+          python law_search.py build
+
+      - name: 지원사업 동기화
+        env:
+          DATA_GO_KR_KEY: ${{ secrets.DATA_GO_KR_KEY }}
+          PYTHONUTF8: "1"
+        run: |
+          set -o pipefail
+          python program_sync.py sync 2>&1 | tee sync_programs.log
+
+      - name: 전체 테스트 (실재성 게이트 포함)
+        env:
+          PYTHONUTF8: "1"
+        run: python -m pytest tests/ -q
+
+      - name: PR 본문 조립
+        id: summary
+        run: |
+          {
+            echo "body<<SYNCEOF"
+            echo "## 주간 자동 동기화 결과"
+            echo ""
+            echo "### 법령"
+            echo '```'
+            tail -n 5 sync_law.log
+            echo '```'
+            echo "### 지원사업"
+            echo '```'
+            tail -n 3 sync_programs.log
+            echo '```'
+            echo ""
+            echo "동기화 안전 검증(급감·스키마)과 전체 테스트(큐레이션 실재성 포함)를 통과한 상태입니다. 검토 후 머지해 주세요."
+            echo "SYNCEOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: PR 생성 (변경 시에만)
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: auto/weekly-sync
+          delete-branch: true
+          title: "data: 주간 자동 동기화"
+          commit-message: "data: 주간 자동 동기화 (법령 + 지원사업)"
+          body: ${{ steps.summary.outputs.body }}
+          add-paths: |
+            data/laws/**
+            data/sources.json
+            data/programs/**
