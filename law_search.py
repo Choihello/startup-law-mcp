@@ -18,6 +18,7 @@ import math
 import re
 import unicodedata
 from dataclasses import asdict, dataclass, fields
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -701,6 +702,243 @@ def _mermaid_graph(result: dict) -> str:
     for i, ref in enumerate(result["outgoing"]):
         lines.append(f'    {tid} --> O{i}["{ref["citation"]}"]')
     return "\n".join(lines)
+
+
+# ===== 창업 특화: 위임 지도 =====
+
+_DELEGATION_RE = re.compile(r"[^.\n]*(?:대통령령|총리령|[가-힣]+부령)으로 정한[^.\n]*")
+_ABBREV_LAW_RE = re.compile(r"(?<![가-힣])법 제(\d+)조(?:의(\d+))?")
+_ABBREV_DECREE_RE = re.compile(r"(?<![가-힣])영 제(\d+)조(?:의(\d+))?")
+
+
+def _revision_date(s: str) -> str:
+    """'시행 2026.01.01' 또는 '2026.01.01' → '2026-01-01'. 실패 시 ''."""
+    m = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", s or "")
+    return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else ""
+
+
+def _parent_of(source: str) -> Optional[str]:
+    for suffix in (" 시행규칙", " 시행령"):
+        if source.endswith(suffix):
+            return source[: -len(suffix)]
+    return None
+
+
+def _subordinates_of(law_name: str, articles: list[Article]) -> list[str]:
+    names = {a.source for a in articles}
+    return [n for n in (f"{law_name} 시행령", f"{law_name} 시행규칙") if n in names]
+
+
+def _sync_check(source: str, articles: list[Article]) -> dict:
+    """모법·하위법령 시행일(revision) 대조 — 정비 지연 플래그."""
+    law_name = _parent_of(source) or source
+
+    def eff(src: str) -> str:
+        a = next((x for x in articles if x.source == src), None)
+        return _revision_date(a.revision) if a else ""
+
+    law_eff = eff(law_name)
+    subs = _subordinates_of(law_name, articles)
+    if not subs:
+        return {"status": "no_subordinate", "law_effective": law_eff}
+    checks = []
+    worst = "ok"
+    for s in subs:
+        s_eff = eff(s)
+        st = "unknown"
+        if law_eff and s_eff:
+            st = "review_needed" if law_eff > s_eff else "ok"
+        if st == "review_needed":
+            worst = "review_needed"
+        elif st == "unknown" and worst == "ok":
+            worst = "unknown"
+        checks.append({"subordinate": s, "effective": s_eff, "status": st})
+    return {"status": worst, "law_effective": law_eff, "subordinates": checks}
+
+
+def delegation_map(source: str, article: Optional[str] = None) -> dict:
+    """법률↔하위법령 위임 지도 + 정비 점검.
+
+    법률: 위임 문구('대통령령/총리령/○○부령으로 정한다') 조문마다 하위법령의
+    '법 제N조' 축약 참조를 역매칭. 시행령·시행규칙: 각 조문의 '법/영 제N조'를
+    상위 조문으로 연결. sync_check는 시행일(revision) 대조.
+    """
+    articles = load_index()
+    src_ok = _source_selector(source, articles)
+    mine = [a for a in articles if src_ok(a.source) and not a.is_supplementary]
+    if not mine:
+        return {"error": f"대상 법령 없음: {source}"}
+    real_source = mine[0].source
+    mine = [a for a in mine if a.source == real_source]
+    if article is not None:
+        parsed = _parse_article_token(article)
+        if parsed is None:
+            return {"error": f"조문 토큰 해석 불가: {article!r}"}
+        mine = [a for a in mine if (a.article_no, a.article_sub) == parsed]
+
+    parent = _parent_of(real_source)
+    if parent is None:
+        subs = _subordinates_of(real_source, articles)
+        refmap: dict[tuple[int, int], list[Article]] = {}
+        for a in articles:
+            if a.source not in subs or a.is_supplementary:
+                continue
+            for m in _ABBREV_LAW_RE.finditer(a.body):
+                refmap.setdefault((int(m.group(1)), int(m.group(2) or 0)), []).append(a)
+        entries = []
+        for a in mine:
+            phrases = [_strip_meta(p.strip()) for p in _DELEGATION_RE.findall(a.body)]
+            if not phrases:
+                continue
+            seen: set[str] = set()
+            delegated = []
+            for t in refmap.get((a.article_no, a.article_sub), []):
+                if t.citation in seen:
+                    continue
+                seen.add(t.citation)
+                delegated.append({
+                    "citation": t.citation,
+                    "article_title": t.article_title,
+                    "snippet": _strip_meta(t.body[:200].replace("\n", " "))[:120],
+                })
+            entries.append({"article": a.article, "article_title": a.article_title,
+                            "phrases": phrases[:5], "delegated_to": delegated})
+        result = {
+            "source": real_source, "role": "법률", "subordinates": subs,
+            "delegating_articles": entries,
+            "counts": {"delegating": len(entries),
+                       "linked": sum(1 for e in entries if e["delegated_to"])},
+        }
+    else:
+        is_rule = real_source.endswith(" 시행규칙")
+        decree_name = f"{parent} 시행령"
+        links = []
+        for a in mine:
+            found_refs: list[tuple[str, int, int, int]] = []
+            for m in _ABBREV_LAW_RE.finditer(a.body):
+                found_refs.append((parent, int(m.group(1)), int(m.group(2) or 0), m.start()))
+            if is_rule:
+                for m in _ABBREV_DECREE_RE.finditer(a.body):
+                    found_refs.append((decree_name, int(m.group(1)), int(m.group(2) or 0),
+                                       m.start()))
+            if not found_refs:
+                continue
+            seen: set[str] = set()
+            ups = []
+            for up_src, no, sub, pos in found_refs:
+                cite = f"{up_src} 제{no}조" + (f"의{sub}" if sub else "")
+                if cite in seen:
+                    continue
+                seen.add(cite)
+                target = next((x for x in articles
+                               if x.source == up_src and x.article_no == no
+                               and x.article_sub == sub and not x.is_supplementary), None)
+                ups.append({"citation": cite, "found": target is not None,
+                            "article_title": target.article_title if target else None,
+                            "context": _around(a.body, pos)})
+            links.append({"article": a.article, "article_title": a.article_title,
+                          "upward": ups})
+        result = {
+            "source": real_source,
+            "role": "시행규칙" if is_rule else "시행령",
+            "parent": parent, "articles_with_links": links,
+            "counts": {"linked_articles": len(links)},
+        }
+    result["sync_check"] = _sync_check(real_source, articles)
+    return result
+
+
+# ===== 창업 특화: 시행일·경과조치 =====
+
+def _parse_iso(s) -> Optional[date]:
+    try:
+        return date.fromisoformat(str(s))
+    except (ValueError, TypeError):
+        return None
+
+
+def check_effective_date(source: str, article: Optional[str] = None,
+                         today: Optional[date] = None) -> dict:
+    """법령·조문의 시행 상태(in_force/upcoming)와 부칙 경과조치를 확인."""
+    today = today or date.today()
+    articles = load_index()
+    src_ok = _source_selector(source, articles)
+    mine = [a for a in articles if src_ok(a.source)]
+    if not mine:
+        return {"error": f"대상 법령 없음: {source}"}
+    real_source = mine[0].source
+    mine = [a for a in mine if a.source == real_source]
+    law_eff = _revision_date(mine[0].revision)
+
+    def status_of(eff_iso: str) -> dict:
+        d = _parse_iso(eff_iso)
+        if d is None:
+            return {"status": "unknown", "effective_date": eff_iso or None}
+        if d > today:
+            return {"status": "upcoming", "effective_date": eff_iso,
+                    "d_day": (d - today).days}
+        return {"status": "in_force", "effective_date": eff_iso}
+
+    suppl = [a for a in mine if a.is_supplementary]
+    result = {"source": real_source, "law": status_of(law_eff)}
+
+    if article is None:
+        if suppl:
+            last = suppl[-1]
+            m = re.search(r"제1조\(시행일\)[^\n]*", last.body)
+            clause = m.group(0) if m else None
+            if clause is None:
+                # 조문 헤더 없는 단일 조항 부칙("이 법은 …부터 시행한다.") 폴백
+                m2 = re.search(r"이\s*(?:법|영|규칙)은[^\n]{0,80}?시행한다[^\n]*", last.body)
+                clause = m2.group(0) if m2 else None
+            result["latest_supplementary"] = {
+                "label": last.article,
+                "effective_clause": clause,
+            }
+        return result
+
+    parsed = _parse_article_token(article)
+    if parsed is None:
+        return {"error": f"조문 토큰 해석 불가: {article!r}"}
+    no, sub = parsed
+    target = next((a for a in mine if a.article_no == no and a.article_sub == sub
+                   and not a.is_supplementary), None)
+    if target is None:
+        return {"error": f"조문 없음: {real_source} 제{no}조" + (f"의{sub}" if sub else "")}
+
+    art_eff_iso = _revision_date(target.effective_date) if target.effective_date else law_eff
+    result["article"] = {
+        "citation": target.citation,
+        "article_title": target.article_title,
+        **status_of(art_eff_iso),
+        "source_of_date": "article" if target.effective_date else "law",
+    }
+    label = f"제{no}조" + (f"의{sub}" if sub else "")
+    # 후행 경계: '제2조'가 '제2조의2'(다른 조문)·'제2조제3호'(호 단위 보일러플레이트)에
+    # 매칭되지 않게 가드
+    label_re = re.compile(re.escape(label) + r"(?!(?:의|제)\d)")
+    head_re = re.compile(r"^제\d+조(?:의\d+)?\s*\(([^)]*)\)")
+    keywords = ("경과조치", "적용례", "특례")
+    trans = []
+    for s in suppl:
+        current_title = ""
+        for raw in s.body.split("\n"):
+            line = raw.strip()
+            m_head = head_re.match(line)
+            if m_head:
+                current_title = m_head.group(1)
+            # 경과조치·적용례·특례 성격의 부칙 조문만 대상 —
+            # '다른 법률의 개정'·'생략' 등 타법개정 보일러플레이트 제외
+            if not any(k in current_title for k in keywords):
+                continue
+            for m in label_re.finditer(line):
+                if m_head and m.start() < m_head.end():
+                    continue  # 부칙 조문 자신의 헤더 숫자
+                trans.append({"supplementary": s.article,
+                              "snippet": _around(line, m.start(), span=90)})
+                break  # 줄당 발췌 1개면 충분
+    result["transitional_provisions"] = trans[:10]
+    return result
 
 
 def cmd_build(_args: argparse.Namespace) -> None:
