@@ -171,11 +171,27 @@ def law_to_markdown(law_json: dict) -> tuple[str, dict]:
 
 
 def sync(oc: str, only: str | None = None) -> dict:
-    """laws.json 큐레이션 목록 전체를 동기화. 법령 단위 오류 격리."""
+    """laws.json 큐레이션 목록 전체를 동기화. 법령 단위 오류 격리.
+
+    갱신 실패 법령은 이전 매니페스트 엔트리를 stale로 유지해 검색에서 사라지지
+    않게 하고, 큐레이션에서 제거된 법령의 md는 삭제(prune)한다.
+    """
     curation = json.loads((DATA / "laws.json").read_text(encoding="utf-8"))
     LAWS_DIR.mkdir(parents=True, exist_ok=True)
+
+    prev_by_name: dict[str, dict] = {}
+    src_file = DATA / "sources.json"
+    if src_file.exists():
+        try:
+            prev_by_name = {s.get("name"): s for s in
+                            json.loads(src_file.read_text(encoding="utf-8")).get("sources", [])}
+        except json.JSONDecodeError:
+            prev_by_name = {}
+
     sources: list[dict] = []
     errors: list[dict] = []
+    all_wanted: list[str] = []
+    failed_reason: dict[str, str] = {}
 
     for entry in curation["laws"]:
         name = entry["name"]
@@ -184,18 +200,22 @@ def sync(oc: str, only: str | None = None) -> dict:
         wanted = [name]
         if entry.get("include_subordinate", True):
             wanted += [f"{name} 시행령", f"{name} 시행규칙"]
+        all_wanted.extend(wanted)
         try:
             hits = fetch_law_list(oc, name)
         except Exception as e:  # noqa: BLE001 — 법령 단위 격리
             errors.append({"law": name, "stage": "search", "error": str(e)})
+            for w in wanted:
+                failed_reason[w] = f"search: {e}"
             continue
         by_name = {str(h.get("법령명한글", "")).strip(): h for h in hits}
         for w in wanted:
             hit = by_name.get(w)
             if not hit:
-                if w == name:  # 본법 미발견만 오류 — 시행령·규칙은 없을 수 있음
+                if w == name:
                     errors.append({"law": w, "stage": "match",
                                    "error": "법령 목록에서 정확일치 결과 없음"})
+                    failed_reason[w] = "match: 목록에서 미발견"
                 continue
             mst = str(hit.get("법령일련번호", "")).strip()
             try:
@@ -208,11 +228,36 @@ def sync(oc: str, only: str | None = None) -> dict:
                 print(f"  ✓ {fname}")
             except Exception as e:  # noqa: BLE001
                 errors.append({"law": w, "stage": "fetch", "error": str(e)})
+                failed_reason[w] = f"fetch: {e}"
+
+    # 갱신 실패분: 이전 세대 엔트리를 stale로 유지 (파일이 남아 있는 경우만)
+    fetched_names = {s["name"] for s in sources}
+    for w in all_wanted:
+        if w in fetched_names or w not in failed_reason:
+            continue
+        p = prev_by_name.get(w)
+        if p and (LAWS_DIR / p.get("file", "")).exists():
+            stale = dict(p)
+            stale["stale"] = True
+            stale["stale_reason"] = failed_reason[w]
+            sources.append(stale)
 
     manifest = {"count": len(sources), "sources": sources, "errors": errors}
-    (DATA / "sources.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"동기화 완료: {len(sources)}개 문서, 오류 {len(errors)}건")
+    src_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=1),
+                        encoding="utf-8")
+
+    # 고아 파일 정리 — 새 매니페스트(stale 포함)에 없는 md 삭제
+    if only is None:
+        valid_files = {s.get("file") for s in sources}
+        removed = []
+        for p in LAWS_DIR.glob("*.md"):
+            if p.name not in valid_files:
+                p.unlink()
+                removed.append(p.name)
+        if removed:
+            print(f"고아 파일 {len(removed)}개 제거: {', '.join(removed[:5])}")
+    print(f"동기화 완료: {len(sources)}개 문서(스테일 {sum(1 for s in sources if s.get('stale'))}건 포함), "
+          f"오류 {len(errors)}건")
     return manifest
 
 

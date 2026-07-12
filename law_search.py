@@ -136,15 +136,38 @@ def parse_md(path: Path) -> list[Article]:
     return articles
 
 
+def _manifest_files() -> Optional[set[str]]:
+    """sources.json 등재 파일명 집합. 매니페스트가 없으면 None(전체 인덱싱 폴백)."""
+    src = DATA / "sources.json"
+    if not src.exists():
+        return None
+    try:
+        manifest = json.loads(src.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return None
+    files = {s.get("file") for s in manifest.get("sources", []) if s.get("file")}
+    return files or None
+
+
 def build_index() -> list[Article]:
+    global _INDEX_CACHE
+    allowed = _manifest_files()
     arts: list[Article] = []
+    skipped: list[str] = []
     for p in sorted(LAWS_DIR.glob("*.md")):
+        if allowed is not None and p.name not in allowed:
+            skipped.append(p.name)
+            continue
         arts.extend(parse_md(p))
     INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
     INDEX_FILE.write_text(
         json.dumps([asdict(a) for a in arts], ensure_ascii=False),
         encoding="utf-8")
-    print(f"인덱스 빌드 완료: 문서 {len({a.source for a in arts})}개, 조문 {len(arts)}개")
+    _INDEX_CACHE = arts  # 재빌드 즉시 캐시 갱신 — stale 캐시 방지
+    msg = f"인덱스 빌드 완료: 문서 {len({a.source for a in arts})}개, 조문 {len(arts)}개"
+    if skipped:
+        msg += f" (매니페스트 외 {len(skipped)}개 제외)"
+    print(msg)
     return arts
 
 
