@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import law_search as ls
@@ -49,3 +50,22 @@ def test_citation_property():
 
 def test_index_fixture(index):
     assert {a.source for a in index} == {"테스트창업법", "테스트창업법 시행령"}
+
+
+def test_build_index_uses_manifest_only(tmp_path, monkeypatch):
+    laws = tmp_path / "laws"
+    laws.mkdir()
+    src_md = (FIXTURES / "법률_테스트창업법.md").read_text(encoding="utf-8")
+    (laws / "법률_테스트창업법.md").write_text(src_md, encoding="utf-8")
+    (laws / "법률_고아법.md").write_text(src_md.replace("테스트창업법", "고아법"),
+                                          encoding="utf-8")
+    (tmp_path / "sources.json").write_text(json.dumps(
+        {"count": 1, "sources": [{"name": "테스트창업법", "file": "법률_테스트창업법.md"}]},
+        ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(ls, "DATA", tmp_path)
+    monkeypatch.setattr(ls, "LAWS_DIR", laws)
+    monkeypatch.setattr(ls, "INDEX_FILE", tmp_path / "index.json")
+    monkeypatch.setattr(ls, "_INDEX_CACHE", None)
+    arts = ls.build_index()
+    assert {a.source for a in arts} == {"테스트창업법"}  # 고아법 제외
+    assert ls.load_index() is arts  # 빌드 직후 캐시가 같은 세대

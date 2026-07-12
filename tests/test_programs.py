@@ -1,4 +1,5 @@
 from datetime import date
+import json
 
 import programs
 
@@ -98,3 +99,39 @@ def test_staleness_boundary_and_older_side(monkeypatch, tmp_path):
     assert data["fetched_at"] == "2026-07-04T00:00:00+00:00"
     w = programs.staleness_warning(data, T)
     assert w is not None and "7일" in w
+
+
+def test_invalid_fetched_at_warns():
+    w = programs.staleness_warning({"fetched_at": "garbage"}, T)
+    assert w is not None and "invalid_timestamp" in w
+
+
+def test_future_fetched_at_warns():
+    w = programs.staleness_warning({"fetched_at": "2027-01-01T00:00:00+00:00"}, T)
+    assert w is not None and "future_timestamp" in w
+
+
+def test_integrity_warnings_collected(monkeypatch, tmp_path):
+    d = tmp_path / "programs"
+    d.mkdir()
+    (d / "announcements.json").write_text(json.dumps(
+        {"fetched_at": "2026-07-10T00:00:00+00:00", "count": 5, "items": []}),
+        encoding="utf-8")  # count 불일치 + intros 파일 없음
+    monkeypatch.setattr(programs, "PROGRAMS_DIR", d)
+    monkeypatch.setattr(programs, "_CACHE", None)
+    joined = " ".join(programs.load_programs()["integrity_warnings"])
+    assert "count_mismatch" in joined
+    assert "snapshot_incomplete" in joined
+
+
+def test_fetched_at_mismatch_warns(monkeypatch, tmp_path):
+    d = tmp_path / "programs"
+    d.mkdir()
+    for fname, fa in (("announcements.json", "2026-07-10T00:00:00+00:00"),
+                      ("intros.json", "2026-07-11T00:00:00+00:00")):
+        (d / fname).write_text(json.dumps({"fetched_at": fa, "count": 0, "items": []}),
+                               encoding="utf-8")
+    monkeypatch.setattr(programs, "PROGRAMS_DIR", d)
+    monkeypatch.setattr(programs, "_CACHE", None)
+    assert any("fetched_at_mismatch" in w
+               for w in programs.load_programs()["integrity_warnings"])

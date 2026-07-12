@@ -52,8 +52,9 @@ def test_fetch_current_filters_and_early_stops(env):
 
 def test_sync_writes_snapshots(env):
     result = program_sync.sync("k")
-    assert result["announcements"] == 2
-    assert result["intros"] == 1
+    assert result["status"] == "ok"
+    assert result["announcements"]["after"] == 2
+    assert result["intros"]["after"] == 1
     ann = json.loads((env / "programs" / "announcements.json").read_text(encoding="utf-8"))
     assert ann["count"] == 2
     assert ann["fetched_at"]
@@ -116,3 +117,76 @@ def test_fetch_all_stops_at_total_count(monkeypatch):
     items = program_sync.fetch_all("k", "intro")
     assert len(items) == 2
     assert calls == [1]  # totalCount 도달 시 추가 페이지 요청 없음
+
+
+def test_envelope_rejects_non_object(monkeypatch):
+    monkeypatch.setattr(program_sync, "_get_json", lambda url: ["not", "an", "object"])
+    with pytest.raises(program_sync.SyncValidationError, match="객체가 아님"):
+        program_sync.fetch_page("k", "announcement")
+
+
+def test_envelope_rejects_non_list_data(monkeypatch):
+    monkeypatch.setattr(program_sync, "_get_json",
+                        lambda url: {"totalCount": 1, "data": "oops"})
+    with pytest.raises(program_sync.SyncValidationError, match="배열이 아님"):
+        program_sync.fetch_page("k", "announcement")
+
+
+def test_envelope_rejects_bad_total_count(monkeypatch):
+    monkeypatch.setattr(program_sync, "_get_json",
+                        lambda url: {"totalCount": "abc", "data": []})
+    with pytest.raises(program_sync.SyncValidationError, match="totalCount"):
+        program_sync.fetch_page("k", "announcement")
+
+
+def test_sync_rejects_empty_success_response(env, monkeypatch):
+    program_sync.sync("k")  # 정상 스냅샷(공고2·소개1) 생성
+    before = (env / "programs" / "announcements.json").read_text(encoding="utf-8")
+    monkeypatch.setattr(program_sync, "fetch_page",
+                        lambda key, target, page=1, per_page=100: {"totalCount": 0, "data": []})
+    with pytest.raises(program_sync.SyncValidationError, match="0건"):
+        program_sync.sync("k")
+    assert (env / "programs" / "announcements.json").read_text(encoding="utf-8") == before
+
+
+def test_sync_rejects_drastic_drop(env):
+    # 기존 10건 스냅샷 심기 — env fake는 공고 2건 반환 → 10→2는 70% 초과 감소
+    d = env / "programs"
+    d.mkdir(exist_ok=True)
+    items = [{"id": str(i), "kind": "공고", "name": f"공고{i}"} for i in range(10)]
+    (d / "announcements.json").write_text(json.dumps(
+        {"fetched_at": "2026-07-10T00:00:00+00:00", "count": 10, "items": items},
+        ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(program_sync.SyncValidationError, match="급감"):
+        program_sync.sync("k")
+    kept = json.loads((d / "announcements.json").read_text(encoding="utf-8"))
+    assert kept["count"] == 10
+
+
+def test_sync_rejects_schema_drift(env, monkeypatch):
+    program_sync.sync("k")
+    before = (env / "programs" / "announcements.json").read_text(encoding="utf-8")
+
+    def drifted(key, target, page=1, per_page=100):
+        if page == 1:
+            return {"totalCount": 2, "data": [
+                {"rcrt_prgs_yn": "Y", "totally_new_field": "x"},
+                {"rcrt_prgs_yn": "Y", "totally_new_field": "y"}]}
+        return {"totalCount": 2, "data": []}
+
+    monkeypatch.setattr(program_sync, "fetch_page", drifted)
+    with pytest.raises(program_sync.SyncValidationError, match="필수 필드"):
+        program_sync.sync("k")
+    assert (env / "programs" / "announcements.json").read_text(encoding="utf-8") == before
+
+
+def test_sync_reports_before_after(env):
+    r1 = program_sync.sync("k")
+    assert r1["announcements"] == {"before": None, "after": 2, "delta": 2}
+    r2 = program_sync.sync("k")
+    assert r2["announcements"] == {"before": 2, "after": 2, "delta": 0}
+
+
+def test_sync_atomic_replace_no_tmp_leftover(env):
+    program_sync.sync("k")
+    assert not list((env / "programs").glob("*.tmp"))

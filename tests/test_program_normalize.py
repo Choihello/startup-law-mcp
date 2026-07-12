@@ -42,3 +42,10 @@ def test_normalize_intro_no_apply_dates():
         rec = program_sync.normalize_intro(raw)
         assert rec["apply_start"] == ""
         assert rec["apply_end"] == ""
+
+
+def test_normalize_intro_url_gets_scheme():
+    recs = [program_sync.normalize_intro(r) for r in _fx()["intro_items"]]
+    for r in recs:
+        assert r["url"] == "" or r["url"].startswith(("https://", "http://"))
+    assert any(r["url"].startswith("https://") for r in recs)  # 실 fixture는 www. 시작

@@ -27,21 +27,36 @@ def invalidate_cache() -> None:
 
 
 def load_programs(use_cache: bool = True) -> dict:
-    """{"announcements": [...], "intros": [...], "fetched_at": ISO|None}"""
+    """{"announcements", "intros", "fetched_at", "integrity_warnings"}"""
     global _CACHE
     if use_cache and _CACHE is not None:
         return _CACHE
-    out = {"announcements": [], "intros": [], "fetched_at": None}
+    out = {"announcements": [], "intros": [], "fetched_at": None,
+           "integrity_warnings": []}
+    metas: dict[str, Optional[str]] = {}
     for field, fname in (("announcements", "announcements.json"),
                          ("intros", "intros.json")):
         p = PROGRAMS_DIR / fname
         if not p.exists():
+            metas[field] = None
             continue
         data = json.loads(p.read_text(encoding="utf-8"))
-        out[field] = data.get("items", [])
+        items = data.get("items", [])
+        out[field] = items
+        declared = data.get("count")
+        if isinstance(declared, int) and declared != len(items):
+            out["integrity_warnings"].append(
+                f"count_mismatch: {fname} count={declared}, 실제 {len(items)}건")
         fa = data.get("fetched_at")
+        metas[field] = fa
         if fa and (out["fetched_at"] is None or fa < out["fetched_at"]):
-            out["fetched_at"] = fa  # 더 오래된 쪽 기준으로 신선도 판단
+            out["fetched_at"] = fa  # 더 오래된 쪽 기준
+    if (metas.get("announcements") is None) != (metas.get("intros") is None):
+        out["integrity_warnings"].append("snapshot_incomplete: 스냅샷 파일 중 하나가 없음")
+    if metas.get("announcements") and metas.get("intros") \
+            and metas["announcements"] != metas["intros"]:
+        out["integrity_warnings"].append(
+            "fetched_at_mismatch: 두 스냅샷의 수집 시각 불일치 — 부분 동기화 의심")
     _CACHE = out
     return out
 
@@ -74,18 +89,30 @@ def _d_day(item: dict, today: date) -> Optional[int]:
     return (end - today).days if end else None
 
 
-def staleness_warning(data: dict, today: Optional[date] = None) -> Optional[str]:
+def data_warnings(data: dict, today: Optional[date] = None) -> list[str]:
+    """신선도·정합성 경고 목록 (빈 리스트면 정상)."""
+    warnings = list(data.get("integrity_warnings", []))
     fa = data.get("fetched_at")
     if not fa:
-        return "지원사업 데이터가 없습니다. sync_programs를 먼저 실행하세요."
+        warnings.append("지원사업 데이터가 없습니다. sync_programs를 먼저 실행하세요.")
+        return warnings
     try:
         fetched = datetime.fromisoformat(fa).date()
     except ValueError:
-        return None
+        warnings.append(f"invalid_timestamp: fetched_at 해석 불가 ({fa!r}) — 재동기화 권장")
+        return warnings
     days = ((today or date.today()) - fetched).days
-    if days >= STALE_DAYS:
-        return f"지원사업 스냅샷이 {days}일 지났습니다. sync_programs로 갱신을 권장합니다."
-    return None
+    if days < 0:
+        warnings.append(f"future_timestamp: fetched_at이 미래 시각 ({fa})")
+    elif days >= STALE_DAYS:
+        warnings.append(f"지원사업 스냅샷이 {days}일 지났습니다. "
+                        f"sync_programs로 갱신을 권장합니다.")
+    return warnings
+
+
+def staleness_warning(data: dict, today: Optional[date] = None) -> Optional[str]:
+    ws = data_warnings(data, today)
+    return "; ".join(ws) if ws else None
 
 
 _SEARCH_FIELDS = ("name", "category", "summary", "target", "region", "org")
@@ -124,6 +151,7 @@ def search_programs(query: str, status: Optional[str] = None,
                     include_closed: bool = False, limit: int = 10,
                     today: Optional[date] = None) -> dict:
     today = today or date.today()
+    limit = max(1, min(limit, 50))
     data = load_programs()
     tokens = ls.tokenize(query)
     if not tokens:
@@ -184,6 +212,7 @@ def get_program(name: str, today: Optional[date] = None) -> dict:
 def list_open_programs(limit: int = 20, today: Optional[date] = None) -> dict:
     """모집 중·마감 임박·모집 예정 공고, 마감일 오름차순."""
     today = today or date.today()
+    limit = max(1, min(limit, 50))
     data = load_programs()
     rows = []
     for it in data["announcements"]:

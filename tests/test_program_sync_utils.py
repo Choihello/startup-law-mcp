@@ -33,3 +33,14 @@ def test_get_json_surfaces_non_json_error(monkeypatch):
                         lambda req, timeout=30: FakeResp())
     with pytest.raises(RuntimeError, match="JSON이 아닌 응답"):
         program_sync._get_json("https://example.com/x")
+
+
+def test_normalize_url_variants():
+    f = program_sync._normalize_url
+    assert f("www.k-startup.go.kr/a?b=1") == "https://www.k-startup.go.kr/a?b=1"
+    assert f("/web/contents/x.do") == "https://www.k-startup.go.kr/web/contents/x.do"
+    assert f("https://already.example/x") == "https://already.example/x"
+    assert f("http://legacy.example/x") == "http://legacy.example/x"
+    assert f("ftp://bad.example/x") == ""
+    assert f("javascript:alert(1)") == ""
+    assert f(None) == ""

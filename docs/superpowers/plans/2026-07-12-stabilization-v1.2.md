@@ -20,7 +20,7 @@
 - URL: `http(s)` 외 스킴 거부(빈 문자열), 스킴 없으면 `https://` 부여, `/` 시작 상대경로는 `https://www.k-startup.go.kr` 결합. 정규화 책임은 저장 경계(normalize_*) 한 곳.
 - 보류 항목 구현 금지 (스코프 가드): snapshot_id 체계, staging 디렉터리·sha256, pyproject/lock/mypy/린트, 모듈 분리, BM25·역색인. 리뷰어는 이들이 diff에 나타나면 Extra로 판정.
 - 표준 라이브러리만. UTF-8 명시. NFC(law_search._nfc) 재사용. conventional commits. `python -m pytest` (Windows).
-- API 키는 환경변수로만 — `zeratot`(LAW_OC)·`9fc8b8bb…` 64자 hex(DATA_GO_KR_KEY) 문자열이 어떤 추적 파일에도 없어야 함.
+- API 키는 환경변수로만 — LAW_OC 이메일 아이디·DATA_GO_KR_KEY 64자 hex 문자열이 어떤 추적 파일에도(이 계획 문서 포함) 리터럴로 없어야 함.
 - 전체 스위트 기준선 77개 — 항상 전부 통과 유지. (아래 태스크별 누계는 참고치이며 파일별 covering 수가 우선.)
 
 ---
@@ -1080,6 +1080,6 @@ git commit -m "docs: README — 도구 10개·동기화 안전 정책·fuzzy 예
 
 ```bash
 python -m pytest tests/ -q          # 전부 통과 (103개)
-git grep -c "9fc8b8bb" $(git rev-parse HEAD) ; git grep -c "zeratot" $(git rev-parse HEAD)
+git grep -c "<DATA_GO_KR_KEY 앞 8자>" $(git rev-parse HEAD) ; git grep -c "<LAW_OC 값>" $(git rev-parse HEAD)
 ```
 Expected: 키 검색 두 건 모두 매치 없음(exit 1). CLI 스모크: `python -X utf8 law_search.py verify "중소기업창업 지원법 제2조에 따라"` 가 ok를 반환하는지 확인해 리포트에 수록.
