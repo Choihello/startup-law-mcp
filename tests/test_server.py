@@ -17,3 +17,14 @@ def test_instructions_mention_both_axes():
     assert "창업" in server.SERVER_INSTRUCTIONS
     assert "search_law" in server.SERVER_INSTRUCTIONS
     assert "search_program" in server.SERVER_INSTRUCTIONS
+
+
+def test_data_status_tool_shape():
+    # 등록 표면을 통해 실제 호출 — 환경(인덱스 유무)에 관대한 구조 단언
+    import server
+
+    res = asyncio.run(server.mcp.call_tool("data_status", {}))
+    s = str(res)
+    assert "programs" in s
+    assert "announcement_count" in s and "intro_count" in s and "warnings" in s
+    assert ("article_count" in s) or ("error" in s)  # 인덱스 있으면 건수, 없으면 error 분기

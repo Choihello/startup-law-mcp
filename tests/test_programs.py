@@ -122,3 +122,16 @@ def test_integrity_warnings_collected(monkeypatch, tmp_path):
     joined = " ".join(programs.load_programs()["integrity_warnings"])
     assert "count_mismatch" in joined
     assert "snapshot_incomplete" in joined
+
+
+def test_fetched_at_mismatch_warns(monkeypatch, tmp_path):
+    d = tmp_path / "programs"
+    d.mkdir()
+    for fname, fa in (("announcements.json", "2026-07-10T00:00:00+00:00"),
+                      ("intros.json", "2026-07-11T00:00:00+00:00")):
+        (d / fname).write_text(json.dumps({"fetched_at": fa, "count": 0, "items": []}),
+                               encoding="utf-8")
+    monkeypatch.setattr(programs, "PROGRAMS_DIR", d)
+    monkeypatch.setattr(programs, "_CACHE", None)
+    assert any("fetched_at_mismatch" in w
+               for w in programs.load_programs()["integrity_warnings"])
