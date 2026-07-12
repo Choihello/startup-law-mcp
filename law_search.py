@@ -703,6 +703,150 @@ def _mermaid_graph(result: dict) -> str:
     return "\n".join(lines)
 
 
+# ===== 창업 특화: 위임 지도 =====
+
+_DELEGATION_RE = re.compile(r"[^.\n]*(?:대통령령|총리령|[가-힣]+부령)으로 정한[^.\n]*")
+_ABBREV_LAW_RE = re.compile(r"(?<![가-힣])법 제(\d+)조(?:의(\d+))?")
+_ABBREV_DECREE_RE = re.compile(r"(?<![가-힣])영 제(\d+)조(?:의(\d+))?")
+
+
+def _revision_date(s: str) -> str:
+    """'시행 2026.01.01' 또는 '2026.01.01' → '2026-01-01'. 실패 시 ''."""
+    m = re.search(r"(\d{4})\.(\d{2})\.(\d{2})", s or "")
+    return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else ""
+
+
+def _parent_of(source: str) -> Optional[str]:
+    for suffix in (" 시행규칙", " 시행령"):
+        if source.endswith(suffix):
+            return source[: -len(suffix)]
+    return None
+
+
+def _subordinates_of(law_name: str, articles: list[Article]) -> list[str]:
+    names = {a.source for a in articles}
+    return [n for n in (f"{law_name} 시행령", f"{law_name} 시행규칙") if n in names]
+
+
+def _sync_check(source: str, articles: list[Article]) -> dict:
+    """모법·하위법령 시행일(revision) 대조 — 정비 지연 플래그."""
+    law_name = _parent_of(source) or source
+
+    def eff(src: str) -> str:
+        a = next((x for x in articles if x.source == src), None)
+        return _revision_date(a.revision) if a else ""
+
+    law_eff = eff(law_name)
+    subs = _subordinates_of(law_name, articles)
+    if not subs:
+        return {"status": "no_subordinate", "law_effective": law_eff}
+    checks = []
+    worst = "ok"
+    for s in subs:
+        s_eff = eff(s)
+        st = "unknown"
+        if law_eff and s_eff:
+            st = "review_needed" if law_eff > s_eff else "ok"
+        if st == "review_needed":
+            worst = "review_needed"
+        elif st == "unknown" and worst == "ok":
+            worst = "unknown"
+        checks.append({"subordinate": s, "effective": s_eff, "status": st})
+    return {"status": worst, "law_effective": law_eff, "subordinates": checks}
+
+
+def delegation_map(source: str, article: Optional[str] = None) -> dict:
+    """법률↔하위법령 위임 지도 + 정비 점검.
+
+    법률: 위임 문구('대통령령/총리령/○○부령으로 정한다') 조문마다 하위법령의
+    '법 제N조' 축약 참조를 역매칭. 시행령·시행규칙: 각 조문의 '법/영 제N조'를
+    상위 조문으로 연결. sync_check는 시행일(revision) 대조.
+    """
+    articles = load_index()
+    src_ok = _source_selector(source, articles)
+    mine = [a for a in articles if src_ok(a.source) and not a.is_supplementary]
+    if not mine:
+        return {"error": f"대상 법령 없음: {source}"}
+    real_source = mine[0].source
+    mine = [a for a in mine if a.source == real_source]
+    if article is not None:
+        parsed = _parse_article_token(article)
+        if parsed is None:
+            return {"error": f"조문 토큰 해석 불가: {article!r}"}
+        mine = [a for a in mine if (a.article_no, a.article_sub) == parsed]
+
+    parent = _parent_of(real_source)
+    if parent is None:
+        subs = _subordinates_of(real_source, articles)
+        refmap: dict[tuple[int, int], list[Article]] = {}
+        for a in articles:
+            if a.source not in subs or a.is_supplementary:
+                continue
+            for m in _ABBREV_LAW_RE.finditer(a.body):
+                refmap.setdefault((int(m.group(1)), int(m.group(2) or 0)), []).append(a)
+        entries = []
+        for a in mine:
+            phrases = [_strip_meta(p.strip()) for p in _DELEGATION_RE.findall(a.body)]
+            if not phrases:
+                continue
+            seen: set[str] = set()
+            delegated = []
+            for t in refmap.get((a.article_no, a.article_sub), []):
+                if t.citation in seen:
+                    continue
+                seen.add(t.citation)
+                delegated.append({
+                    "citation": t.citation,
+                    "article_title": t.article_title,
+                    "snippet": _strip_meta(t.body[:200].replace("\n", " "))[:120],
+                })
+            entries.append({"article": a.article, "article_title": a.article_title,
+                            "phrases": phrases[:5], "delegated_to": delegated})
+        result = {
+            "source": real_source, "role": "법률", "subordinates": subs,
+            "delegating_articles": entries,
+            "counts": {"delegating": len(entries),
+                       "linked": sum(1 for e in entries if e["delegated_to"])},
+        }
+    else:
+        is_rule = real_source.endswith(" 시행규칙")
+        decree_name = f"{parent} 시행령"
+        links = []
+        for a in mine:
+            found_refs: list[tuple[str, int, int, int]] = []
+            for m in _ABBREV_LAW_RE.finditer(a.body):
+                found_refs.append((parent, int(m.group(1)), int(m.group(2) or 0), m.start()))
+            if is_rule:
+                for m in _ABBREV_DECREE_RE.finditer(a.body):
+                    found_refs.append((decree_name, int(m.group(1)), int(m.group(2) or 0),
+                                       m.start()))
+            if not found_refs:
+                continue
+            seen: set[str] = set()
+            ups = []
+            for up_src, no, sub, pos in found_refs:
+                cite = f"{up_src} 제{no}조" + (f"의{sub}" if sub else "")
+                if cite in seen:
+                    continue
+                seen.add(cite)
+                target = next((x for x in articles
+                               if x.source == up_src and x.article_no == no
+                               and x.article_sub == sub and not x.is_supplementary), None)
+                ups.append({"citation": cite, "found": target is not None,
+                            "article_title": target.article_title if target else None,
+                            "context": _around(a.body, pos)})
+            links.append({"article": a.article, "article_title": a.article_title,
+                          "upward": ups})
+        result = {
+            "source": real_source,
+            "role": "시행규칙" if is_rule else "시행령",
+            "parent": parent, "articles_with_links": links,
+            "counts": {"linked_articles": len(links)},
+        }
+    result["sync_check"] = _sync_check(real_source, articles)
+    return result
+
+
 def cmd_build(_args: argparse.Namespace) -> None:
     build_index()
 
