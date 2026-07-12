@@ -49,6 +49,23 @@ def _date_norm(s) -> str:
     return f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else ""
 
 
+KSTARTUP_BASE = "https://www.k-startup.go.kr"
+
+
+def _normalize_url(u) -> str:
+    """스킴 없는 K-Startup URL 보정. http(s) 외 스킴은 거부(빈 문자열)."""
+    u = _s(u)
+    if not u:
+        return ""
+    if u.startswith(("http://", "https://")):
+        return u
+    if "://" in u or u.lower().startswith(("javascript:", "data:", "mailto:")):
+        return ""
+    if u.startswith("/"):
+        return KSTARTUP_BASE + u
+    return "https://" + u
+
+
 def _get_json(url: str) -> dict:
     req = urllib.request.Request(url, headers={"User-Agent": "startup-law-mcp/1.1"})
     with urllib.request.urlopen(req, timeout=30) as resp:
@@ -106,7 +123,7 @@ def normalize_announcement(raw: dict) -> dict:
         "apply_end": _date_norm(raw.get("pbanc_rcpt_end_dt")),
         "org": _s(raw.get("pbanc_ntrp_nm") or raw.get("biz_prch_dprt_nm")),
         "contact": _s(raw.get("prch_cnpl_no")),
-        "url": _s(raw.get("detl_pg_url") or raw.get("biz_gdnc_url")),
+        "url": _normalize_url(raw.get("detl_pg_url") or raw.get("biz_gdnc_url")),
     }
 
 
@@ -132,7 +149,7 @@ def normalize_intro(raw: dict) -> dict:
         "apply_end": "",
         "org": "",
         "contact": "",
-        "url": _s(raw.get("detl_pg_url")),
+        "url": _normalize_url(raw.get("detl_pg_url")),
     }
 
 
