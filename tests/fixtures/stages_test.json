@@ -1,0 +1,12 @@
+{"stages": [
+ {"id": "idea", "order": 1, "name": "아이디어 검증", "summary": "예비창업 준비 단계",
+  "key_articles": [
+    {"source": "테스트창업법", "article": "제2조", "why": "창업기업 정의"},
+    {"source": "테스트창업법", "article": "제99조", "why": "존재하지 않는 조문(테스트)"}],
+  "checklist": ["아이템 검증", "시장 조사"],
+  "program_hints": [{"query": "예비창업", "why": "예비창업자 대상"}]},
+ {"id": "incorporation", "order": 2, "name": "법인 설립", "summary": "설립 절차",
+  "key_articles": [{"source": "테스트창업법 시행령", "article": "제2조", "why": "운영 절차"}],
+  "checklist": ["정관 작성"],
+  "program_hints": []}
+]}
