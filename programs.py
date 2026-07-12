@@ -94,7 +94,8 @@ def data_warnings(data: dict, today: Optional[date] = None) -> list[str]:
     warnings = list(data.get("integrity_warnings", []))
     fa = data.get("fetched_at")
     if not fa:
-        return ["지원사업 데이터가 없습니다. sync_programs를 먼저 실행하세요."]
+        warnings.append("지원사업 데이터가 없습니다. sync_programs를 먼저 실행하세요.")
+        return warnings
     try:
         fetched = datetime.fromisoformat(fa).date()
     except ValueError:

@@ -27,4 +27,4 @@ def test_data_status_tool_shape():
     s = str(res)
     assert "programs" in s
     assert "announcement_count" in s and "intro_count" in s and "warnings" in s
-    assert ("article_count" in s) or ("error" in s)  # 인덱스 있으면 건수, 없으면 error 분기
+    assert ("article_count" in s) or ("인덱스가 없습니다" in s)  # 인덱스 있으면 건수, 없으면 error 분기

@@ -1080,6 +1080,6 @@ git commit -m "docs: README — 도구 10개·동기화 안전 정책·fuzzy 예
 
 ```bash
 python -m pytest tests/ -q          # 전부 통과 (103개)
-git grep -c "9fc8b8bb" $(git rev-parse HEAD) ; git grep -c "zeratot" $(git rev-parse HEAD)
+git grep -c "<DATA_GO_KR_KEY 앞 8자>" $(git rev-parse HEAD) ; git grep -c "<LAW_OC 값>" $(git rev-parse HEAD)
 ```
 Expected: 키 검색 두 건 모두 매치 없음(exit 1). CLI 스모크: `python -X utf8 law_search.py verify "중소기업창업 지원법 제2조에 따라"` 가 ok를 반환하는지 확인해 리포트에 수록.

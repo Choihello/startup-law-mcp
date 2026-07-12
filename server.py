@@ -97,7 +97,7 @@ def register_tools(mcp: FastMCP) -> None:
 
         Args:
             query: 자연어 검색어
-            law_type: 법종 필터 (법률/대통령령/총리령/부령)
+            law_type: 법종 필터 — 인덱스의 실제 법종 값 사용 (법률/대통령령/총리령/고용노동부령 등, list_laws로 확인)
             source: 법령명 부분일치 필터 (예: "조세특례제한법")
             limit: 반환 결과 수 (기본 10)
             fuzzy: 음절 bi-gram 부분 매칭 (정확 매칭이 없을 때)
@@ -132,7 +132,7 @@ def register_tools(mcp: FastMCP) -> None:
         """인덱싱된 창업 법령 목록 (법령명·법종·시행일·조문 수).
 
         Args:
-            law_type: 법종 필터 (법률/대통령령/총리령/부령, 선택)
+            law_type: 법종 필터 — 인덱스의 실제 법종 값 사용 (법률/대통령령/총리령/고용노동부령 등, list_laws로 확인, 선택)
         """
         err = _check_enum(law_type, "law_type", _known_law_types())
         if err:
