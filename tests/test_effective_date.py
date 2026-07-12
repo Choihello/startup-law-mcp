@@ -25,6 +25,8 @@ def test_article_level_with_transitional(index):
     assert r["article"]["source_of_date"] == "law"  # 조문 <시행> 없음 → 법령 시행일 사용
     joined = " ".join(t["snippet"] for t in r["transitional_provisions"])
     assert "창업한 기업" in joined  # 부칙 경과조치 발췌
+    # 부칙 자체 헤더(제2조(경과조치))는 오탐 제외 — 본문 언급 1건만
+    assert len(r["transitional_provisions"]) == 1
 
 
 def test_article_effective_date_priority(monkeypatch):

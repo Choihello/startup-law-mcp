@@ -911,7 +911,17 @@ def check_effective_date(source: str, article: Optional[str] = None,
     label = f"제{no}조" + (f"의{sub}" if sub else "")
     trans = []
     for s in suppl:
+        seen_starts: list[int] = []
         for m in re.finditer(re.escape(label), s.body):
+            # 부칙 자체 조문 헤더("제2조(경과조치)"처럼 줄머리 + 여는 괄호)는
+            # 본칙 조문 언급이 아니므로 제외 — 부칙 번호는 본칙과 무관하게 재시작
+            line_start = s.body.rfind("\n", 0, m.start()) + 1
+            if m.start() == line_start and s.body[m.end():m.end() + 1] == "(":
+                continue
+            # 동일 스니펫 창(±90) 안의 중복 매칭 제거
+            if any(abs(m.start() - a) < 90 for a in seen_starts):
+                continue
+            seen_starts.append(m.start())
             trans.append({"supplementary": s.article,
                           "snippet": _around(s.body, m.start(), span=90)})
     result["transitional_provisions"] = trans[:10]
