@@ -18,6 +18,7 @@ import math
 import re
 import unicodedata
 from dataclasses import asdict, dataclass, fields
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -844,6 +845,76 @@ def delegation_map(source: str, article: Optional[str] = None) -> dict:
             "counts": {"linked_articles": len(links)},
         }
     result["sync_check"] = _sync_check(real_source, articles)
+    return result
+
+
+# ===== 창업 특화: 시행일·경과조치 =====
+
+def _parse_iso(s) -> Optional[date]:
+    try:
+        return date.fromisoformat(str(s))
+    except (ValueError, TypeError):
+        return None
+
+
+def check_effective_date(source: str, article: Optional[str] = None,
+                         today: Optional[date] = None) -> dict:
+    """법령·조문의 시행 상태(in_force/upcoming)와 부칙 경과조치를 확인."""
+    today = today or date.today()
+    articles = load_index()
+    src_ok = _source_selector(source, articles)
+    mine = [a for a in articles if src_ok(a.source)]
+    if not mine:
+        return {"error": f"대상 법령 없음: {source}"}
+    real_source = mine[0].source
+    mine = [a for a in mine if a.source == real_source]
+    law_eff = _revision_date(mine[0].revision)
+
+    def status_of(eff_iso: str) -> dict:
+        d = _parse_iso(eff_iso)
+        if d is None:
+            return {"status": "unknown", "effective_date": eff_iso or None}
+        if d > today:
+            return {"status": "upcoming", "effective_date": eff_iso,
+                    "d_day": (d - today).days}
+        return {"status": "in_force", "effective_date": eff_iso}
+
+    suppl = [a for a in mine if a.is_supplementary]
+    result = {"source": real_source, "law": status_of(law_eff)}
+
+    if article is None:
+        if suppl:
+            last = suppl[-1]
+            m = re.search(r"제1조\(시행일\)[^\n]*", last.body)
+            result["latest_supplementary"] = {
+                "label": last.article,
+                "effective_clause": m.group(0) if m else None,
+            }
+        return result
+
+    parsed = _parse_article_token(article)
+    if parsed is None:
+        return {"error": f"조문 토큰 해석 불가: {article!r}"}
+    no, sub = parsed
+    target = next((a for a in mine if a.article_no == no and a.article_sub == sub
+                   and not a.is_supplementary), None)
+    if target is None:
+        return {"error": f"조문 없음: {real_source} 제{no}조" + (f"의{sub}" if sub else "")}
+
+    art_eff_iso = _revision_date(target.effective_date) if target.effective_date else law_eff
+    result["article"] = {
+        "citation": target.citation,
+        "article_title": target.article_title,
+        **status_of(art_eff_iso),
+        "source_of_date": "article" if target.effective_date else "law",
+    }
+    label = f"제{no}조" + (f"의{sub}" if sub else "")
+    trans = []
+    for s in suppl:
+        for m in re.finditer(re.escape(label), s.body):
+            trans.append({"supplementary": s.article,
+                          "snippet": _around(s.body, m.start(), span=90)})
+    result["transitional_provisions"] = trans[:10]
     return result
 
 
