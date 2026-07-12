@@ -886,9 +886,14 @@ def check_effective_date(source: str, article: Optional[str] = None,
         if suppl:
             last = suppl[-1]
             m = re.search(r"제1조\(시행일\)[^\n]*", last.body)
+            clause = m.group(0) if m else None
+            if clause is None:
+                # 조문 헤더 없는 단일 조항 부칙("이 법은 …부터 시행한다.") 폴백
+                m2 = re.search(r"이\s*(?:법|영|규칙)은[^\n]{0,80}?시행한다[^\n]*", last.body)
+                clause = m2.group(0) if m2 else None
             result["latest_supplementary"] = {
                 "label": last.article,
-                "effective_clause": m.group(0) if m else None,
+                "effective_clause": clause,
             }
         return result
 
@@ -909,21 +914,29 @@ def check_effective_date(source: str, article: Optional[str] = None,
         "source_of_date": "article" if target.effective_date else "law",
     }
     label = f"제{no}조" + (f"의{sub}" if sub else "")
+    # 후행 경계: '제2조'가 '제2조의2'(다른 조문)·'제2조제3호'(호 단위 보일러플레이트)에
+    # 매칭되지 않게 가드
+    label_re = re.compile(re.escape(label) + r"(?!(?:의|제)\d)")
+    head_re = re.compile(r"^제\d+조(?:의\d+)?\s*\(([^)]*)\)")
+    keywords = ("경과조치", "적용례", "특례")
     trans = []
     for s in suppl:
-        seen_starts: list[int] = []
-        for m in re.finditer(re.escape(label), s.body):
-            # 부칙 자체 조문 헤더("제2조(경과조치)"처럼 줄머리 + 여는 괄호)는
-            # 본칙 조문 언급이 아니므로 제외 — 부칙 번호는 본칙과 무관하게 재시작
-            line_start = s.body.rfind("\n", 0, m.start()) + 1
-            if m.start() == line_start and s.body[m.end():m.end() + 1] == "(":
+        current_title = ""
+        for raw in s.body.split("\n"):
+            line = raw.strip()
+            m_head = head_re.match(line)
+            if m_head:
+                current_title = m_head.group(1)
+            # 경과조치·적용례·특례 성격의 부칙 조문만 대상 —
+            # '다른 법률의 개정'·'생략' 등 타법개정 보일러플레이트 제외
+            if not any(k in current_title for k in keywords):
                 continue
-            # 동일 스니펫 창(±90) 안의 중복 매칭 제거
-            if any(abs(m.start() - a) < 90 for a in seen_starts):
-                continue
-            seen_starts.append(m.start())
-            trans.append({"supplementary": s.article,
-                          "snippet": _around(s.body, m.start(), span=90)})
+            for m in label_re.finditer(line):
+                if m_head and m.start() < m_head.end():
+                    continue  # 부칙 조문 자신의 헤더 숫자
+                trans.append({"supplementary": s.article,
+                              "snippet": _around(line, m.start(), span=90)})
+                break  # 줄당 발췌 1개면 충분
     result["transitional_provisions"] = trans[:10]
     return result
 
