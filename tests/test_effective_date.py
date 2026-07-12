@@ -80,3 +80,23 @@ def test_effective_clause_fallback_single_provision(monkeypatch):
     monkeypatch.setattr(ls, "_INDEX_CACHE", arts)
     r = ls.check_effective_date("단순법", today=date(2026, 7, 12))
     assert "시행한다" in (r["latest_supplementary"]["effective_clause"] or "")
+
+
+def test_transitional_hang_suffix_is_valid_mention(monkeypatch):
+    # '제23조제1항'은 제23조의 유효한 언급 — 재현율 회복 (v1.3 최종리뷰 백로그)
+    suppl_body = (
+        "제1조(시행일) 이 법은 2026년 1월 1일부터 시행한다.\n"
+        "제2조(경과조치) 이 법 시행 전 종전의 제23조제1항에 따른 처분은 유효하다.")
+    arts = [
+        ls.Article(law_type="법률", source="회복법", revision="시행 2026.01.01", file="f",
+                   chapter="", article="제23조", article_no=23, article_sub=0,
+                   article_title="해고 제한", body="본문"),
+        ls.Article(law_type="법률", source="회복법", revision="시행 2026.01.01", file="f",
+                   chapter="부칙", article="부칙 <제1호, 2025.12.01>", article_no=0,
+                   article_sub=0, article_title="부칙", body=suppl_body,
+                   is_supplementary=True),
+    ]
+    monkeypatch.setattr(ls, "_INDEX_CACHE", arts)
+    r = ls.check_effective_date("회복법", article="제23조", today=date(2026, 7, 12))
+    assert len(r["transitional_provisions"]) == 1
+    assert "제23조제1항" in r["transitional_provisions"][0]["snippet"]
