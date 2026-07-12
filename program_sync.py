@@ -60,12 +60,34 @@ def _get_json(url: str) -> dict:
         raise RuntimeError(f"JSON이 아닌 응답 (키 미승인/서비스 오류 가능): {body[:300]}")
 
 
+DRASTIC_DROP_RATIO = 0.7  # 기존 건수 대비 이 비율 초과 감소 시 동기화 거부 (정책값)
+
+
+class SyncValidationError(RuntimeError):
+    """응답·결과가 안전 기준 미달 — 기존 스냅샷을 보존하고 중단."""
+
+
+def _validate_envelope(data, target: str) -> None:
+    """응답 엔벨로프 스키마 검증 (probe 확정: totalCount/data[])."""
+    if not isinstance(data, dict):
+        raise SyncValidationError(f"{target}: 응답 최상위가 객체가 아님 ({type(data).__name__})")
+    if not isinstance(data.get("data"), list):
+        raise SyncValidationError(f"{target}: 'data'가 배열이 아님")
+    tc = data.get("totalCount")
+    ok = (isinstance(tc, int) and not isinstance(tc, bool) and tc >= 0) or \
+         (isinstance(tc, str) and tc.isdigit())
+    if not ok:
+        raise SyncValidationError(f"{target}: 'totalCount'가 0 이상 정수가 아님 ({tc!r})")
+
+
 def fetch_page(key: str, target: str, page: int = 1, per_page: int = 100) -> dict:
-    """한 페이지 조회. 응답 엔벨로프는 probe로 확정 (기대: totalCount/data[])."""
+    """한 페이지 조회 + 엔벨로프 검증."""
     qs = urllib.parse.urlencode({
         "serviceKey": key, "page": page, "perPage": per_page, "returnType": "json",
     })
-    return _get_json(f"{API_BASE}/{ENDPOINTS[target]}?{qs}")
+    data = _get_json(f"{API_BASE}/{ENDPOINTS[target]}?{qs}")
+    _validate_envelope(data, target)
+    return data
 
 
 def normalize_announcement(raw: dict) -> dict:
@@ -161,23 +183,77 @@ def fetch_current_announcements(key: str, per_page: int = 100, max_pages: int = 
     return kept
 
 
+def _snapshot_count(fname: str) -> int | None:
+    p = PROGRAMS_DIR / fname
+    if not p.exists():
+        return None
+    try:
+        return len(json.loads(p.read_text(encoding="utf-8")).get("items", []))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _guard_required_fields(label: str, items: list[dict], require_id: bool) -> None:
+    """정규화 결과의 필수 필드 누락률이 10%를 넘으면 스키마 변경으로 간주."""
+    if not items:
+        return
+    missing = sum(1 for it in items
+                  if not it.get("name") or (require_id and not it.get("id")))
+    if missing / len(items) > 0.10:
+        raise SyncValidationError(
+            f"{label}: 필수 필드 누락 {missing}/{len(items)}건 — API 스키마 변경 의심, 중단")
+
+
+def _guard_counts(label: str, before: int | None, after: int) -> None:
+    if after == 0 and (before or 0) > 0:
+        raise SyncValidationError(f"{label}: 신규 0건 — 기존 {before}건 보존을 위해 중단")
+    if before and after < before * (1 - DRASTIC_DROP_RATIO):
+        raise SyncValidationError(
+            f"{label}: 급감 감지 ({before} → {after}건) — 기준 "
+            f"{int(DRASTIC_DROP_RATIO * 100)}% 초과 감소, 중단")
+
+
+def _write_snapshot(fname: str, payload: dict) -> None:
+    """임시 파일 기록 → JSON 재파싱 검증 → 원자 교체(os.replace)."""
+    PROGRAMS_DIR.mkdir(parents=True, exist_ok=True)
+    tmp = PROGRAMS_DIR / (fname + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
+    json.loads(tmp.read_text(encoding="utf-8"))
+    os.replace(tmp, PROGRAMS_DIR / fname)
+
+
 def sync(key: str) -> dict:
-    """현행 공고 + 사업소개 전량 수집 → 스냅샷 교체. 전체 성공 시에만 파일을 쓴다."""
+    """현행 공고 + 사업소개 수집 → 안전 검증 통과 시에만 스냅샷 교체."""
     from datetime import datetime, timezone
 
     ann_raw = fetch_current_announcements(key)
     intro_raw = fetch_all(key, "intro")
-    fetched_at = datetime.now(timezone.utc).isoformat()
     ann = [normalize_announcement(r) for r in ann_raw]
     intros = [normalize_intro(r) for r in intro_raw]
-    PROGRAMS_DIR.mkdir(parents=True, exist_ok=True)
+
+    if not ann and not intros:
+        raise SyncValidationError("공고·사업소개 모두 0건 — 비정상 응답 의심, 중단")
+    before_ann = _snapshot_count("announcements.json")
+    before_intro = _snapshot_count("intros.json")
+    _guard_required_fields("공고", ann, require_id=True)
+    _guard_required_fields("사업소개", intros, require_id=False)
+    _guard_counts("공고", before_ann, len(ann))
+    _guard_counts("사업소개", before_intro, len(intros))
+
+    fetched_at = datetime.now(timezone.utc).isoformat()
     for fname, items in (("announcements.json", ann), ("intros.json", intros)):
-        (PROGRAMS_DIR / fname).write_text(
-            json.dumps({"fetched_at": fetched_at, "count": len(items), "items": items},
-                       ensure_ascii=False, indent=1),
-            encoding="utf-8")
-    print(f"동기화 완료: 공고 {len(ann)}건, 사업소개 {len(intros)}건")
-    return {"announcements": len(ann), "intros": len(intros), "fetched_at": fetched_at}
+        _write_snapshot(fname, {"fetched_at": fetched_at, "count": len(items), "items": items})
+    result = {
+        "status": "ok",
+        "fetched_at": fetched_at,
+        "announcements": {"before": before_ann, "after": len(ann),
+                          "delta": len(ann) - (before_ann or 0)},
+        "intros": {"before": before_intro, "after": len(intros),
+                   "delta": len(intros) - (before_intro or 0)},
+    }
+    print(f"동기화 완료: 공고 {len(ann)}건({result['announcements']['delta']:+d}), "
+          f"사업소개 {len(intros)}건({result['intros']['delta']:+d})")
+    return result
 
 
 def cmd_probe(args: argparse.Namespace) -> None:
