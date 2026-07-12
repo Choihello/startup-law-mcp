@@ -1,14 +1,14 @@
 import asyncio
 
 
-def test_nine_tools_registered():
+def test_ten_tools_registered():
     import server
 
     tools = asyncio.run(server.mcp.list_tools())
     names = {t.name for t in tools}
     assert names == {"search_law", "get_article", "list_laws", "verify_citation",
                      "find_references", "search_program", "get_program",
-                     "list_open_programs", "sync_programs"}
+                     "list_open_programs", "sync_programs", "data_status"}
 
 
 def test_instructions_mention_both_axes():
