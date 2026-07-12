@@ -124,6 +124,7 @@ def search_programs(query: str, status: Optional[str] = None,
                     include_closed: bool = False, limit: int = 10,
                     today: Optional[date] = None) -> dict:
     today = today or date.today()
+    limit = max(1, min(limit, 50))
     data = load_programs()
     tokens = ls.tokenize(query)
     if not tokens:
@@ -184,6 +185,7 @@ def get_program(name: str, today: Optional[date] = None) -> dict:
 def list_open_programs(limit: int = 20, today: Optional[date] = None) -> dict:
     """모집 중·마감 임박·모집 예정 공고, 마감일 오름차순."""
     today = today or date.today()
+    limit = max(1, min(limit, 50))
     data = load_programs()
     rows = []
     for it in data["announcements"]:

@@ -317,6 +317,7 @@ def search(query: str, law_type: Optional[str] = None,
            source: Optional[str] = None, limit: int = 10,
            fuzzy: bool = False) -> list[dict]:
     articles = load_index()
+    limit = max(1, min(limit, 50))
     tokens = tokenize(query)
     if not tokens:
         return []
@@ -538,6 +539,7 @@ def find_references(source: str, article: str, limit: int = 20,
         return {"error": f"조문 토큰 해석 불가: {article!r}"}
     no, sub = parsed
     articles = load_index()
+    limit = max(1, min(limit, 50))
     src_ok = _source_selector(source, articles)
     targets = [a for a in articles
                if src_ok(a.source) and a.article_no == no and a.article_sub == sub]
