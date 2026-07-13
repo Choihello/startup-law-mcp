@@ -230,6 +230,13 @@ def sync(oc: str, only: str | None = None) -> dict:
                 errors.append({"law": w, "stage": "fetch", "error": str(e)})
                 failed_reason[w] = f"fetch: {e}"
 
+    # 전 항목 실패(해외 IP 차단·네트워크 장애·키 문제) — 매니페스트를 덮어쓰지 않고 보존.
+    # 부분 실패는 아래 stale-carry로 격리하지만, 신규 성공이 0건이면 쓰기 자체를 중단한다.
+    if not sources and errors:
+        raise RuntimeError(
+            f"법령 동기화 전체 실패 ({len(errors)}건) — 기존 매니페스트를 보존합니다. "
+            f"첫 오류: {errors[0]['error']}")
+
     # 갱신 실패분: 이전 세대 엔트리를 stale로 유지 (파일이 남아 있는 경우만)
     fetched_names = {s["name"] for s in sources}
     for w in all_wanted:
