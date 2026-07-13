@@ -2,6 +2,21 @@
 
 ![test](https://github.com/Choihello/startup-law-mcp/actions/workflows/test.yml/badge.svg)
 
+## 🚀 바로 쓰기 — 설치 불필요
+
+원격 서버가 배포되어 있어 로컬 설치 없이 바로 연결할 수 있다: `https://startup-law-mcp.fly.dev/mcp`
+(Fly.io 앱명은 배포 시 전역 유일성 확인 후 변경될 수 있다 — 실제 URL은 저장소 공지 참고).
+
+| 클라이언트 | 등록 방법 |
+|---|---|
+| Claude Desktop / claude.ai | 설정 → 커넥터 → 커스텀 커넥터 → 위 URL 입력 |
+| Claude Code | `claude mcp add --transport http startup-law https://startup-law-mcp.fly.dev/mcp` |
+
+원격판은 관리 도구(`sync_programs`)를 제외한 **12개 도구**만 노출한다(데이터 갱신은 자동
+재배포로 처리). 유휴 시 머신이 절전 상태로 내려가므로 첫 요청은 콜드스타트로 수 초 지연될
+수 있다 — 이후 요청은 빠르다. 로컬에서 전체 13개 도구(관리 포함)로 직접 실행하려면
+아래 "빠른 시작"을 따른다.
+
 **창업 법령 + K-Startup 지원사업 통합 MCP** — 법인 설립, 세액감면, 첫 채용, 지식재산 등
 창업 실무에서 부딪히는 핵심 법령을 조문 단위로 색인하고, K-Startup의 지원사업 공고·소개를
 함께 조회해 Claude Desktop 같은 MCP 클라이언트에서 바로 인용 가능한 근거로 돌려준다.
@@ -223,6 +238,10 @@ data/
 └── _cache/         # probe 결과 원본 JSON (gitignored)
 ```
 
+`server.py`(stdio, 로컬용 13개 도구)와 `server_http.py`(streamable-http, 원격 배포용
+12개 도구·`sync_programs` 제외)는 같은 `register_tools()`를 공유하며 `data/`를 그대로
+읽는다.
+
 법령 마크다운은 "Format A" 고정 포맷을 따른다 (파서가 이 형식에 의존):
 
 ```markdown
@@ -293,6 +312,11 @@ v1.0/v1.1 수동 실행은 여전히 가능하며, 자동 동기화는 변경이
 기록된 파일이 남지 않는다. 결과에는 `announcements`/`intros` 각각 `before`/`after`/
 `delta` 건수가 포함되어 어떤 변화가 있었는지 바로 확인할 수 있다.
 
+**원격 서버 자동 재배포**: `main`에 `*.py`·`data/**`·`Dockerfile`·`fly.toml` 변경이
+병합되면 `fly-deploy` 워크플로가 Fly.io 원격 빌더로 이미지를 재빌드해 배포한다. 즉
+`weekly-sync` PR을 리뷰 후 머지하면 로컬 재실행 없이 원격 서버(`https://startup-law-mcp.fly.dev/mcp`)의
+데이터도 자동으로 최신화된다.
+
 ## 기술 메모
 
 - **의존성 최소화**: 검색·인덱싱·동기화 전 구간 표준 라이브러리만 사용(정규식·JSON·
@@ -317,6 +341,9 @@ v1.0/v1.1 수동 실행은 여전히 가능하며, 자동 동기화는 변경이
 - **지원사업 상태 계산**: 공고 API는 상태 필드를 직접 주지 않으므로, `apply_start`/
   `apply_end`와 오늘 날짜를 비교해 upcoming/open/closing_soon(마감 7일 이내)/closed/
   unknown(날짜 파싱 실패)을 서버에서 계산한다. 사업소개는 상시 정보라 상태·D-day가 없다.
+- **컨테이너 이미지**: `Dockerfile`은 `data/`를 이미지에 그대로 복사한 뒤 빌드 시점에
+  `python law_search.py build`로 `index.json`을 구워 넣는다 — 런타임 인덱스 빌드가
+  없어 콜드스타트가 짧다.
 
 ## 로드맵
 
@@ -332,8 +359,10 @@ v1.0/v1.1 수동 실행은 여전히 가능하며, 자동 동기화는 변경이
   시행규칙 위임 조문 자동 연결 + 정비 점검), `startup_stage_guide`(창업 6단계별
   핵심 조문·체크리스트·관련 지원사업 큐레이션, `data/stages.json` + 조문 실재성
   게이트 테스트로 보증), `check_effective_date`(조문 시행일·경과규정 확인)
-- **v1.4 자동 동기화 (현재)** — GitHub Actions 주간 동기화(법령+지원사업) → 변경 감지 시 자동 PR
-- **v2.0** — 원격 배포 (streamable-http, URL 하나로 연결)
+- **v1.4 자동 동기화** — GitHub Actions 주간 동기화(법령+지원사업) → 변경 감지 시 자동 PR
+- **v2.0 원격 배포 (현재)** — `server_http.py`(streamable-http, 12개 도구) + Docker화 +
+  Fly.io 배포(`fly.toml`, `fly-deploy` 워크플로) → 설치 없이 URL 하나로 연결, `main` 병합
+  시 원격 서버 자동 재배포
 
 ## 라이선스
 
