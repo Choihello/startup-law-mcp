@@ -83,8 +83,12 @@ def _known_law_types():
         return set(_FALLBACK_LAW_TYPES)
 
 
-def register_tools(mcp: FastMCP) -> None:
-    """도구 등록 단일 지점 — 로컬 stdio와 (v2) 원격 HTTP가 공유."""
+def register_tools(mcp: FastMCP, include_admin: bool = True) -> None:
+    """도구 등록 단일 지점 — 로컬 stdio(13개)와 원격 HTTP(12개)가 공유.
+
+    include_admin=False면 관리 도구(sync_programs)를 제외한다 — 원격 공개판에서
+    아무나 서버측 API 수집을 유발하지 못하게 (데이터 갱신은 재배포로).
+    """
 
     @mcp.tool()
     def search_law(
@@ -230,29 +234,6 @@ def register_tools(mcp: FastMCP) -> None:
         return pg.list_open_programs(limit=limit)
 
     @mcp.tool()
-    def sync_programs() -> dict:
-        """K-Startup에서 지원사업 공고·사업소개를 다시 받아 스냅샷 갱신.
-
-        결과의 warning이 스냅샷 노후를 알리거나 사용자가 "지원사업 최신으로
-        받아줘"라고 요청할 때 호출. 데이터만 갱신되므로 재시작이 필요 없습니다.
-        환경변수 DATA_GO_KR_KEY(공공데이터포털 인증키)가 필요합니다.
-        """
-        import os
-
-        key = os.environ.get("DATA_GO_KR_KEY", "").strip()
-        if not key:
-            return {"status": "error",
-                    "message": "환경변수 DATA_GO_KR_KEY가 없습니다. data.go.kr에서 "
-                               "'창업진흥원_K-Startup 조회서비스' 활용신청 후 "
-                               "인증키(Decoding)를 설정하세요."}
-        try:
-            result = program_sync.sync(key)
-        except Exception as e:  # noqa: BLE001 — 도구 표면에서 원인 전달
-            return {"status": "error", "message": f"동기화 실패: {e}"}
-        pg.invalidate_cache()
-        return {"status": "ok", "restart_required": False, **result}
-
-    @mcp.tool()
     def data_status() -> dict:
         """법령·지원사업 데이터 상태 한눈에 — 건수·수집 시각·신선도·경고.
 
@@ -347,9 +328,35 @@ def register_tools(mcp: FastMCP) -> None:
                 return err
         return ls.check_effective_date(source, article=article)
 
+    if not include_admin:
+        return
+
+    @mcp.tool()
+    def sync_programs() -> dict:
+        """K-Startup에서 지원사업 공고·사업소개를 다시 받아 스냅샷 갱신.
+
+        결과의 warning이 스냅샷 노후를 알리거나 사용자가 "지원사업 최신으로
+        받아줘"라고 요청할 때 호출. 데이터만 갱신되므로 재시작이 필요 없습니다.
+        환경변수 DATA_GO_KR_KEY(공공데이터포털 인증키)가 필요합니다.
+        """
+        import os
+
+        key = os.environ.get("DATA_GO_KR_KEY", "").strip()
+        if not key:
+            return {"status": "error",
+                    "message": "환경변수 DATA_GO_KR_KEY가 없습니다. data.go.kr에서 "
+                               "'창업진흥원_K-Startup 조회서비스' 활용신청 후 "
+                               "인증키(Decoding)를 설정하세요."}
+        try:
+            result = program_sync.sync(key)
+        except Exception as e:  # noqa: BLE001 — 도구 표면에서 원인 전달
+            return {"status": "error", "message": f"동기화 실패: {e}"}
+        pg.invalidate_cache()
+        return {"status": "ok", "restart_required": False, **result}
+
 
 mcp = FastMCP("startup-law", instructions=SERVER_INSTRUCTIONS)
-register_tools(mcp)
+register_tools(mcp, include_admin=True)
 
 
 if __name__ == "__main__":

@@ -36,3 +36,26 @@ def test_instructions_mention_v13_tools():
 
     for t in ("delegation_map", "startup_stage_guide", "check_effective_date"):
         assert t in server.SERVER_INSTRUCTIONS
+
+
+def test_remote_surface_excludes_admin():
+    from mcp.server.fastmcp import FastMCP
+
+    import server
+
+    remote = FastMCP("startup-law-remote-test",
+                     instructions=server.SERVER_INSTRUCTIONS)
+    server.register_tools(remote, include_admin=False)
+    remote_names = {t.name for t in asyncio.run(remote.list_tools())}
+    assert "sync_programs" not in remote_names
+    assert len(remote_names) == 12
+    local_names = {t.name for t in asyncio.run(server.mcp.list_tools())}
+    assert local_names - remote_names == {"sync_programs"}
+
+
+def test_server_http_module_surface():
+    import server_http
+
+    names = {t.name for t in asyncio.run(server_http.mcp.list_tools())}
+    assert "sync_programs" not in names
+    assert len(names) == 12
