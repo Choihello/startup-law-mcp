@@ -2,6 +2,17 @@
 
 ![test](https://github.com/Choihello/startup-law-mcp/actions/workflows/test.yml/badge.svg)
 
+**Claude에 URL 하나만 등록하면, 창업 법령 50개·8,191개 조문과 K-Startup 지원사업을 실제 원문을 근거로 답합니다.** LLM이 지어내는 "○○법 제N조" 환각 대신, 인덱스에서 대조한 진짜 조문만.
+
+<!-- 데모 스크린샷 자리: claude.ai에서 실제 질문→조문 답변 화면을 캡처해
+     docs/assets/demo.png 로 저장한 뒤 아래 줄의 주석을 해제하세요 -->
+<!-- ![claude.ai에서 창업 세액감면 질문에 조세특례제한법 제6조 원문으로 답하는 데모](docs/assets/demo.png) -->
+
+> **"카페 창업하는데 세액감면 받을 수 있어?"**
+> → Claude가 `search_law` → `get_article`을 호출해 **조세특례제한법 제6조(창업중소기업 등에 대한 세액감면)** 원문·시행일(2026.01.01)을 근거로 답변합니다. 인용이 실재하는지 `verify_citation`으로 검증까지.
+
+이 프로젝트가 유용했다면 ⭐ 하나가 큰 힘이 됩니다.
+
 ## 🚀 바로 쓰기 — 설치 불필요
 
 원격 서버가 배포되어 있어 로컬 설치 없이 바로 연결할 수 있다: `https://startup-law-mcp.fly.dev/mcp`
