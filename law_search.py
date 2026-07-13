@@ -914,9 +914,9 @@ def check_effective_date(source: str, article: Optional[str] = None,
         "source_of_date": "article" if target.effective_date else "law",
     }
     label = f"제{no}조" + (f"의{sub}" if sub else "")
-    # 후행 경계: '제2조'가 '제2조의2'(다른 조문)·'제2조제3호'(호 단위 보일러플레이트)에
-    # 매칭되지 않게 가드
-    label_re = re.compile(re.escape(label) + r"(?!(?:의|제)\d)")
+    # '제N조제M항'은 그 조문의 유효한 언급(항 접미 허용).
+    # '제N조의M'(다른 조문)·'제N조제M호'(타법개정 보일러플레이트)는 계속 차단.
+    label_re = re.compile(re.escape(label) + r"(?:제\d+항)*(?!(?:의|제)\d)")
     head_re = re.compile(r"^제\d+조(?:의\d+)?\s*\(([^)]*)\)")
     keywords = ("경과조치", "적용례", "특례")
     trans = []
