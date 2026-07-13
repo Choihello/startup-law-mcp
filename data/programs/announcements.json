@@ -1,6 +1,6 @@
 {
- "fetched_at": "2026-07-12T10:01:06.135628+00:00",
- "count": 309,
+ "fetched_at": "2026-07-13T01:26:29.734157+00:00",
+ "count": 289,
  "items": [
   {
    "id": "178513",
@@ -1651,22 +1651,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178379"
   },
   {
-   "id": "178377",
-   "kind": "공고",
-   "name": "2026년 서강비즈니스센터 입주기업 모집(~7/12)",
-   "category": "시설ㆍ공간ㆍ보육",
-   "summary": "예비창업자와 우수기업에 대한 종합지원과 경쟁력강화를 위해 &apos;서강비즈니스센터&apos;에 입주할 기업을 모집하오니 역량 있는 (예비)기업인의 많은 신청 바랍니다.",
-   "target": "ㅇ사업목적과 아이템이 「첨단기술 및 제품의 범위」에 속하는 예비창업자 또는 창업 7년 미만의 기업(입주신청일 현재)\r\nㅇ정부지원 타 보육센터 입주경험이 없는 자(지방 창업보육센터 제외)\r\nㅇ서강대학교와 산학협력사업 진행중인 기업 우대\r\nㅇ서강대학교와 기술이전 가능한 기업 우대",
-   "target_age": "만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "7년미만",
-   "region": "서울",
-   "apply_start": "2026-07-01",
-   "apply_end": "2026-07-12",
-   "org": "서강대학교 창업지원단",
-   "contact": "0232744870",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178377"
-  },
-  {
    "id": "178376",
    "kind": "공고",
    "name": "벤처확인인증 사전진단&일대일 무료 밋업 지원사업",
@@ -1811,22 +1795,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178366"
   },
   {
-   "id": "178365",
-   "kind": "공고",
-   "name": "[카이스트청년창업투자지주] 강남 DeepTech Startup Sprint 2026 참가 모집",
-   "category": "멘토링ㆍ컨설팅ㆍ교육",
-   "summary": "강남구 소재 딥테크(DeepTech) 분야 예비창업자 및 창업기업의 사업화 역량 강화와 투자유치 경쟁력 제고를 위한 「강남 Deep Tech Startup Sprint 2026」 참가자 모집계획을 다음과 같이 공고하오니, 참여를 희망하는 창업기업 및 예비창업자는 많은 신청 바랍니다.",
-   "target": "ㆍ  강남구에 소재한 창업기업\r\nㆍ 딥테크(DeepTech) 스타트업 창업 의지가 있는 예비창업자\r\nㆍ 타지역 소재 창업기업은 교육 수료 전까지 사업장 소재지를 강남구로 이전하는 조건으로 참여 가능\r\nㆍ 예비창업자는 지역 제한 없이 참여 가능",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만",
-   "region": "서울",
-   "apply_start": "2026-06-30",
-   "apply_end": "2026-07-12",
-   "org": "카이스트청년창업투자지주 대표이사",
-   "contact": "0264947776",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178365"
-  },
-  {
    "id": "178364",
    "kind": "공고",
    "name": "TIPS 추천 바이오-메디컬 유망기업 투자유치 지원 프로그램 신청 안내",
@@ -1857,22 +1825,6 @@
    "org": "김해의생명산업진흥원",
    "contact": "0553109270",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178362"
-  },
-  {
-   "id": "178360",
-   "kind": "공고",
-   "name": "2026 ICT 융합 하드웨어 해커톤",
-   "category": "행사ㆍ네트워크",
-   "summary": "아이디어 기획부터 설계·제작·검증까지 전 과정을 경험하며 제품 개발 역량과 협업 능력을 강화하는 프로젝트 중심 프로그램을이디어 기획부터 설계·제작·검증까지 전 과정을 경험하며 제품 개발 역량과 협업 능력을 강화하는 프로젝트 중심 프로그램을 다음과 같이 운영하오니 많은 관심과 신청 바랍니다.",
-   "target": "경기도 내 일반인, (예비)창업자, 창업 7년 이내 중소기업 30명 내외\r\n10개 팀 내외",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만",
-   "region": "경기",
-   "apply_start": "2026-06-29",
-   "apply_end": "2026-07-12",
-   "org": "차세대융합기술연구원",
-   "contact": "0318889569",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178360"
   },
   {
    "id": "178359",
@@ -1953,22 +1905,6 @@
    "org": "부산기술창업투자원",
    "contact": "0517151764",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178355"
-  },
-  {
-   "id": "178354",
-   "kind": "공고",
-   "name": "2026년 SaaS 전환지원센터xAWS SaaS 현대화 교육 1회차 참가자 모집 공고",
-   "category": "멘토링ㆍ컨설팅ㆍ교육",
-   "summary": "정보통신산업진흥원 SaaS 전환지원센터는 AWS와 함께 「클라우드 기반 SaaS 현대화 기술 특강 및 실습 교육」을 운영합니다.\r\n본 교육은 SaaS 현대화를 위한 핵심 사용 사례와 최신 클라우드 기술 트렌드를 중심으로, SaaS 전환 및 서비스 고도화에 필요한 핵심 개념과 실무 방향을 공유하기 위해 마련되었습니다.\r\n\r\n관련한 정보나 교육을 받아보고 싶으신 분들은, 신청 링크를 통한 구글폼 신청서 작성 후 제출해 주시길 바랍니다.",
-   "target": "SaaS·클라우드·AI 기술 및 서비스 고도화에 관심 있는 누구나",
-   "target_age": "만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-29",
-   "apply_end": "2026-07-12",
-   "org": "정보통신산업진흥원, SaaS 전환지원센터",
-   "contact": "0316061521",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178354"
   },
   {
    "id": "178352",
@@ -2145,54 +2081,6 @@
    "org": "(재)충남콘텐츠진흥원",
    "contact": "0415900947",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178339"
-  },
-  {
-   "id": "178338",
-   "kind": "공고",
-   "name": "『2026년 Bridge 배틀그라운드』글로벌 진출 지원사업",
-   "category": "글로벌",
-   "summary": "경기도 소재 스타트업의 해외시장 진입역량 및 투자유치 경쟁력 강화를 지원하는<『2026년 Bridge 배틀그라운드』글로벌 진출 지원사업>을 다음과 같이 공고하오니 참여를 희망하시는 기업은 안내에 따라 신청하시기 바랍니다.",
-   "target": "경기도 소재 창업 7년 이내 스타트업 (첨부의 공고문 및 참가신청서 확인)",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "1년미만,2년미만,3년미만,5년미만,7년미만",
-   "region": "경기",
-   "apply_start": "2026-06-29",
-   "apply_end": "2026-07-12",
-   "org": "경기도경제과학진흥원",
-   "contact": "0316040005",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178338"
-  },
-  {
-   "id": "178337",
-   "kind": "공고",
-   "name": "『2026년 Bridge 오픈그라운드』투자 유치 역량 강화 교육 지원사업",
-   "category": "멘토링ㆍ컨설팅ㆍ교육",
-   "summary": "경기도 내 스타트업의 단계별 맞춤형 멘토링 및 IR 고도화를 통해 투자유치 역량을 강화하고 투자유치 기반 마련을 지원하는 <『2026년 Bridge 오픈그라운드』투자 유치 역량 강화 교육 지원사업>을 다음과 같이 공고하오니 참여를 희망하시는 기업은 안내에 따라 신청하시기 바랍니다.",
-   "target": "경기도 소재 창업 7년 이내 스타트업 (첨부의 공고문 및 참가신청서 확인)",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "1년미만,2년미만,3년미만,5년미만,7년미만",
-   "region": "경기",
-   "apply_start": "2026-06-29",
-   "apply_end": "2026-07-12",
-   "org": "경기도경제과학진흥원",
-   "contact": "0316040005",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178337"
-  },
-  {
-   "id": "178336",
-   "kind": "공고",
-   "name": "『2026년 Bridge 오픈그라운드』기술협업(O.I.) 지원사업",
-   "category": "사업화",
-   "summary": "대·중견기업과 경기도 내 스타트업 간 기술협업 거점 구축을  지원하는 <『2026년 Bridge 오픈그라운드』기술협업(O.I.) 지원사업>을 다음과 같이 공고하오니 참여를 희망하시는 기업은 안내에 따라 신청하시기 바랍니다.",
-   "target": "경기도 소재 창업 7년 이내 스타트업 (첨부의 공고문 및 참가신청서 확인)",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "1년미만,2년미만,3년미만,5년미만,7년미만",
-   "region": "경기",
-   "apply_start": "2026-06-29",
-   "apply_end": "2026-07-12",
-   "org": "경기도경제과학진흥원",
-   "contact": "0231525839",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178336"
   },
   {
    "id": "178335",
@@ -2403,22 +2291,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178310"
   },
   {
-   "id": "178309",
-   "kind": "공고",
-   "name": "[제2서울핀테크랩] 2026년 블록체인 아카데미 수강생 모집",
-   "category": "시설ㆍ공간ㆍ보육",
-   "summary": "디지털 금융 이해를 위한 아카데미 지원계획을 다음과 같이 공고하오니 참여를 희망하는 자는 안내 따라 신청하기 바랍니다.",
-   "target": "취업준비생, 대학생, 스타트업 임직원, 직장인 등 블록체인에 관심 있는 누구나",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-22",
-   "apply_end": "2026-07-12",
-   "org": "제2서울핀테크랩",
-   "contact": "07042369504",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178309"
-  },
-  {
    "id": "178306",
    "kind": "공고",
    "name": "2026년 특허출원·등록 비용 바우처 지원사업 (하반기 1차)",
@@ -2563,38 +2435,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178292"
   },
   {
-   "id": "178291",
-   "kind": "공고",
-   "name": "2026년 수원도시재단 창업지원센터 창업특강(아이디어에서 창업까지) 참가자 모집",
-   "category": "창업교육",
-   "summary": "수원도시재단 창업지원센터에서 예비창업자 및 청년창업기업을 대상으로 창업역량 강화를 위한 창업특강을 아래와 같이 운영하오니, 창업에 관심 있는 많은 분들의 참여를 바랍니다.",
-   "target": "예비(청년)창업자 및 창업에 관심있는 시민",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "경기",
-   "apply_start": "2026-06-25",
-   "apply_end": "2026-07-12",
-   "org": "수원도시재단",
-   "contact": "0312806361",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178291"
-  },
-  {
-   "id": "178290",
-   "kind": "공고",
-   "name": "[강동구 청년해냄센터] 입주기업 모집",
-   "category": "시설ㆍ공간ㆍ보육",
-   "summary": "강동구 청년해냄센터에서 입주기업을 모집하오니 입주 희망자는 안내에 따라 신청하시기 바랍니다.",
-   "target": "기업 대표자 기준, 아래 조건 충족\r\n- 코워킹 오피스 : 예비창업자 또는 1년 미만의 초기창업자(※ 사업자등록증 기준 2025. 6. 26 이후 창업)\r\n- 연 령 : 19세∼39세 이하 청년 (1986.6.26. ~ 2007.6.25.)\r\n- 주소지 :본점 소재지를 본 센터로 등록 혹은 이전 가능한 기업\r\n※ 예비창업자 : 입주 후 1개월 내 사업장 이전 및 센터 주소로 사업자등록 가능한 자\r\n※ 기창업자 : 입주 후 1개월 내 사업장 이전 및 센터 주소로 본점 소재지 이전이 가능한 자",
-   "target_age": "만 20세 이상 ~ 만 39세 이하",
-   "years": "예비창업자,1년미만",
-   "region": "전국",
-   "apply_start": "2026-06-25",
-   "apply_end": "2026-07-12",
-   "org": "강동구 청년해냄센터",
-   "contact": "024886879",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178290"
-  },
-  {
    "id": "178289",
    "kind": "공고",
    "name": "(주)미래서비스 1인 창조기업 지원센터 입주기업 모집공고",
@@ -2737,38 +2577,6 @@
    "org": "서울바이오허브 센터장",
    "contact": "0222003342",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178274"
-  },
-  {
-   "id": "178273",
-   "kind": "공고",
-   "name": "SNU Venture Builder 시즌5 참가팀 모집(정부지원사업 및 투자유치 성장 프로젝트)",
-   "category": "멘토링ㆍ컨설팅ㆍ교육",
-   "summary": "실전 창업 육성 프로그램 SNU Venture Builder 시즌5 참가팀을 모집합니다.\r\n이번 시즌은 정부지원사업 선정과 투자 유치를 목표로 하는 패스트 트랙(Fast Track) 프로그램으로 초기 창업 단계에 필요한 핵심 역량을 단기간에 집중적으로 습득할 수 있도록 구성되었습니다.\r\n교육 – 멘토링 – 컨설팅 – IR Deck 제작 - 투자자 밋업 전 과정을 포함하며 선발팀의 편의를 고려하여 개강 전에 오프라인 교육을 진행하고, 이후에는 온라인 교육 중심으로 운영됩니다.\r\n창업 아이디어를 구체화하고 싶은 예비 창업자 또는 사업화 역량을 끌어올리고 싶은 초기 창업자에게 적극 추천드립니다.\r\n이번 시즌은 기존보다 모집을 확대하여 더 많은 팀에게 성장 기회를 제공할 예정이오니 많은 관심과 지원 부탁드립니다.",
-   "target": "서울대학교 재학중인 대학원생(연구생 등록 수료생 포함) 개인 혹은 팀\r\n(팀으로 지원하는 경우 서울대 대학원생(재학생) 1명 이상 포함 시 학부생 지원 가능",
-   "target_age": "만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만",
-   "region": "전국",
-   "apply_start": "2026-06-16",
-   "apply_end": "2026-07-12",
-   "org": "서울대학교 시흥캠퍼스본부",
-   "contact": "0231526924",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178273"
-  },
-  {
-   "id": "178272",
-   "kind": "공고",
-   "name": "2026 C-Star Awards 투자  IR 경진대회",
-   "category": "행사ㆍ네트워크",
-   "summary": "전국단위 대규모 창업경진대회 [2026년 C-Star Awards 투자 IR 경진대회]를 개최합니다. \r\n총상금 1.4억원과 다양한 지원 프로그램 혜택이 있습니다. 많은 관심 부탁드립니다.",
-   "target": "예비창업자\r\n기창업자(7년 이내)",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,7년미만",
-   "region": "전국",
-   "apply_start": "2026-06-25",
-   "apply_end": "2026-07-12",
-   "org": "킹고스프링",
-   "contact": "03151715850",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178272"
   },
   {
    "id": "178269",
@@ -3027,22 +2835,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178223"
   },
   {
-   "id": "178222",
-   "kind": "공고",
-   "name": "소셜창업트랙:임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육",
-   "category": "창업교육",
-   "summary": "소셜벤처, 사회적기업, 임팩트비즈니스 분야 청년 창업자를 위한 실전 창업 교육입니다.",
-   "target": "청년 예비 및 초기창업자(1987년 이후 출생자)",
-   "target_age": "만 20세 이상 ~ 만 39세 이하",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-22",
-   "apply_end": "2026-07-12",
-   "org": "관악구청",
-   "contact": "07077777408",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178222"
-  },
-  {
    "id": "178219",
    "kind": "공고",
    "name": "2026년 중소기업 국내‧외 판로개척 및 마케팅 유공자 포상",
@@ -3057,22 +2849,6 @@
    "org": "중소벤처기업부 장관",
    "contact": "0266789345",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178219"
-  },
-  {
-   "id": "178218",
-   "kind": "공고",
-   "name": "K-PATH 프로그램 모집 공고",
-   "category": "사업화",
-   "summary": "KT와 AX사업을 함께 확대해 나갈 유망 AI 스타트업에 실질적인 지원과 사업 협력 기회를 제공하기 위해 「K-PATH 2026」 참가기업을 모집합니다.",
-   "target": "대한민국 유망 AI 스타트업\r\n\r\nK-PATH는 아래 6개 분야에서 KT와 협업 가능성이 높은 AI 스타트업을 모집합니다.\r\n  01. 엔터프라이즈 & AI에이전트\r\n  02. 데이터 & Data for AI\r\n  03. 피지컬 AI & 로보틱스\r\n  04. AI Trust & 보안\r\n  05. AI 인프라 & 모델\r\n  06. 산업 특화 버티컬 AI",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-22",
-   "apply_end": "2026-07-12",
-   "org": "주식회사 마크앤컴퍼니",
-   "contact": "025876275",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178218"
   },
   {
    "id": "178217",
@@ -3091,22 +2867,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178217"
   },
   {
-   "id": "178215",
-   "kind": "공고",
-   "name": "2026년 창업혁신공간 남서부권(안양) 신규 입주기업 추가모집",
-   "category": "시설ㆍ공간ㆍ보육",
-   "summary": "경기창업혁신공간 남서부권(안양)에서 는 예비창업자 ~ 3년 이내 기술창업 기업을 지원하기 위해 신규 입주기업을 모집하오니, 혁신 기술과 우수한 아이템을 보유한 창업자들의 많은 참여를 바랍니다.",
-   "target": "[기술창업분야] 예비창업자 ~ 3년 이내 스타트업",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만",
-   "region": "전국",
-   "apply_start": "2026-06-22",
-   "apply_end": "2026-07-12",
-   "org": "경기도경제과학진흥원",
-   "contact": "0318308661",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178215"
-  },
-  {
    "id": "178214",
    "kind": "공고",
    "name": "한국폴리텍Ⅱ대학 창업보육센터 입주기업 상시 모집",
@@ -3121,22 +2881,6 @@
    "org": "한국폴리텍Ⅱ대학 창업보육센터",
    "contact": "0325102142",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178214"
-  },
-  {
-   "id": "178212",
-   "kind": "공고",
-   "name": "2026 KT 오픈이노베이션 참여 스타트업 모집",
-   "category": "사업화",
-   "summary": "경기창조경제혁신센터(이하 &apos;경기혁신센터&apos;)는 우수 기술 및 혁신 아이디어를 보유한 기업을 발굴·육성하여  KT와의 오픈이노베이션 협업 기회를 제공하고, 실질적인 사업화 성과 창출을 지원하는 「2026 KT Collaboration」프로그램을 운영하오니 많은 관심과 참여 바랍니다.",
-   "target": "KT와의 사업화 연계를 희망하는 스타트업 및 중소기업\r\n※공고일(&apos;26.6.22.) 기준 업력 10년 내 법인 사업자",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-22",
-   "apply_end": "2026-07-12",
-   "org": "경기창조경제혁신센터",
-   "contact": "0317809046",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178212"
   },
   {
    "id": "178211",
@@ -3555,22 +3299,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178078"
   },
   {
-   "id": "178075",
-   "kind": "공고",
-   "name": "코디세이 AI 올인원 2기 모집(선착순 접수 7월 12일 23시까지)",
-   "category": "멘토링ㆍ컨설팅ㆍ교육",
-   "summary": "과학기술정보통신부·정보통신기획평가원·(재)이노베이션아카데미에서는 AI 전문인력 양성을 위한 「코디세이 AI 올인원 과정」 제2기 교육생을 모집하오니, 관심 있는 분들의 많은 신청 바랍니다.",
-   "target": "대한민국 국적의 성인 또는 고졸 이상 학력자라면 전공 및 경력과 무관하게 누구나 지원 가능합니다.",
-   "target_age": "만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "서울",
-   "apply_start": "2026-06-15",
-   "apply_end": "2026-07-12",
-   "org": "(재)이노베이션아카데미",
-   "contact": "0261772117",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=178075"
-  },
-  {
    "id": "178023",
    "kind": "공고",
    "name": "[정부지원] 2026년 중소기업 AI 역량 강화 및 실무 자동화 교육생 모집 (인재키움 프리미엄)",
@@ -3665,22 +3393,6 @@
    "org": "한국토지주택공사",
    "contact": "0312508269",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177970"
-  },
-  {
-   "id": "177963",
-   "kind": "공고",
-   "name": "[서울핀테크랩] 자산관리 및 로보어드바이저 분야 교류 네트워킹 모집",
-   "category": "행사ㆍ네트워크",
-   "summary": "안녕하세요. 서울핀테크랩입니다.\r\n\r\n서울핀테크랩은 서울시가 운영하는 핀테크 스타트업 육성 지원 기관으로, 100여 개 핀테크 기업의 성장을 지원하고 있습니다.\r\n\r\n2026.07.14.(화) 13:30 ~ 17:00, 자산관리 및 로보어드바이저 분야 기업 간 협업 기회 발굴 및 커뮤니티 형성을 위한 분야별 네트워킹 행사를 개최합니다.\r\n선착순 마감으로 조기 종료될 수 있으니, 많은 관심과 빠른 참여 바랍니다.",
-   "target": "자산관리 및 로보어드바이저 분야 스타트업, 기업 및 관계자 누구나",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "전국",
-   "apply_start": "2026-06-04",
-   "apply_end": "2026-07-12",
-   "org": "서울핀테크랩",
-   "contact": "027860664",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177963"
   },
   {
    "id": "177957",
@@ -3939,22 +3651,6 @@
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177809"
   },
   {
-   "id": "177792",
-   "kind": "공고",
-   "name": "2026년 공간정보 창업지원센터 입주기업 모집공고",
-   "category": "시설ㆍ공간ㆍ보육",
-   "summary": "국토교통부와 한국국토정보공사는 「공간정보산업 진흥법」제16조의2에 따라 공간정보 분야 중소·창업기업을 지원하고 있습니다. 이에 공간정보 창업지원센터 입주기업을 모집하오니 역량있는 창업자의 많은 참여 바랍니다.",
-   "target": "공간정보 우수기술(아이디어)을 보유한 창업기업",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "7년미만",
-   "region": "경기",
-   "apply_start": "2026-06-19",
-   "apply_end": "2026-07-12",
-   "org": "한국국토정보공사",
-   "contact": "0637131121",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177792"
-  },
-  {
    "id": "177681",
    "kind": "공고",
    "name": "충남 벤처투자포럼 및 IR 컨설팅 지원 사업 참여기업 모집",
@@ -3985,22 +3681,6 @@
    "org": "김해의생명산업진흥원",
    "contact": "0553109295",
    "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177673"
-  },
-  {
-   "id": "177629",
-   "kind": "공고",
-   "name": "(수학없이 배우는) 머신러닝 이론과 실습 교육과정",
-   "category": "창업교육",
-   "summary": "(수학없이 배우는) 머신러닝 이론과 실습 교육생 모집을 다음과 같이 공고하오니, 부울경 지역 내 대상자분들의 많은 관심과 참여 바랍니다.",
-   "target": "▶ 교육대상 : 비전공자, 구직자, 재직자",
-   "target_age": "만 20세 미만,만 20세 이상 ~ 만 39세 이하,만 40세 이상",
-   "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만,10년미만",
-   "region": "부산",
-   "apply_start": "2026-05-12",
-   "apply_end": "2026-07-12",
-   "org": "부산정보산업진흥원",
-   "contact": "0517499314",
-   "url": "https://www.k-startup.go.kr/web/contents/bizpbanc-ongoing.do?schM=view&pbancSn=177629"
   },
   {
    "id": "177563",
