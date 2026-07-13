@@ -210,19 +210,6 @@
    "origin": "law.go.kr"
   },
   {
-   "name": "중소기업 인력지원 특별법",
-   "law_type": "법률",
-   "law_id": "009557",
-   "promulgation_no": "20727",
-   "promulgation_date": "2025.01.31",
-   "effective_date": "2026.02.01",
-   "ministry": "중소벤처기업부",
-   "file": "법률_중소기업 인력지원 특별법.md",
-   "mst": "268811",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr"
-  },
-  {
    "name": "중소기업 인력지원 특별법 시행령",
    "law_type": "대통령령",
    "law_id": "009597",
@@ -271,32 +258,6 @@
    "ministry": "재정경제부",
    "file": "법률_부가가치세법.md",
    "mst": "276117",
-   "group": "설립·운영",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "부가가치세법 시행령",
-   "law_type": "대통령령",
-   "law_id": "003666",
-   "promulgation_no": "36133",
-   "promulgation_date": "2026.02.27",
-   "effective_date": "2026.02.27",
-   "ministry": "재정경제부",
-   "file": "대통령령_부가가치세법 시행령.md",
-   "mst": "283641",
-   "group": "설립·운영",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "부가가치세법 시행규칙",
-   "law_type": "재정경제부령",
-   "law_id": "007289",
-   "promulgation_no": "00009",
-   "promulgation_date": "2026.03.20",
-   "effective_date": "2026.03.20",
-   "ministry": "재정경제부",
-   "file": "재정경제부령_부가가치세법 시행규칙.md",
-   "mst": "284995",
    "group": "설립·운영",
    "origin": "law.go.kr"
   },
@@ -418,32 +379,6 @@
    "origin": "law.go.kr"
   },
   {
-   "name": "산업재해보상보험법",
-   "law_type": "법률",
-   "law_id": "001760",
-   "promulgation_no": "21375",
-   "promulgation_date": "2026.02.19",
-   "effective_date": "2026.07.01",
-   "ministry": "고용노동부",
-   "file": "법률_산업재해보상보험법.md",
-   "mst": "283459",
-   "group": "고용",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "산업재해보상보험법 시행령",
-   "law_type": "대통령령",
-   "law_id": "003793",
-   "promulgation_no": "36473",
-   "promulgation_date": "2026.06.30",
-   "effective_date": "2026.07.01",
-   "ministry": "고용노동부",
-   "file": "대통령령_산업재해보상보험법 시행령.md",
-   "mst": "287491",
-   "group": "고용",
-   "origin": "law.go.kr"
-  },
-  {
    "name": "산업재해보상보험법 시행규칙",
    "law_type": "고용노동부령",
    "law_id": "007373",
@@ -505,19 +440,6 @@
    "ministry": "지식재산처",
    "file": "법률_상표법.md",
    "mst": "279819",
-   "group": "지재·데이터",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "상표법 시행령",
-   "law_type": "대통령령",
-   "law_id": "003823",
-   "promulgation_no": "35809",
-   "promulgation_date": "2025.10.01",
-   "effective_date": "2025.10.01",
-   "ministry": "지식재산처",
-   "file": "대통령령_상표법 시행령.md",
-   "mst": "277543",
    "group": "지재·데이터",
    "origin": "law.go.kr"
   },
@@ -650,7 +572,128 @@
    "mst": "256827",
    "group": "온라인 사업",
    "origin": "law.go.kr"
+  },
+  {
+   "name": "중소기업 인력지원 특별법",
+   "law_type": "법률",
+   "law_id": "009557",
+   "promulgation_no": "20727",
+   "promulgation_date": "2025.01.31",
+   "effective_date": "2026.02.01",
+   "ministry": "중소벤처기업부",
+   "file": "법률_중소기업 인력지원 특별법.md",
+   "mst": "268811",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error [Errno 111] Connection refused>"
+  },
+  {
+   "name": "부가가치세법 시행령",
+   "law_type": "대통령령",
+   "law_id": "003666",
+   "promulgation_no": "36133",
+   "promulgation_date": "2026.02.27",
+   "effective_date": "2026.02.27",
+   "ministry": "재정경제부",
+   "file": "대통령령_부가가치세법 시행령.md",
+   "mst": "283641",
+   "group": "설립·운영",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
+  },
+  {
+   "name": "부가가치세법 시행규칙",
+   "law_type": "재정경제부령",
+   "law_id": "007289",
+   "promulgation_no": "00009",
+   "promulgation_date": "2026.03.20",
+   "effective_date": "2026.03.20",
+   "ministry": "재정경제부",
+   "file": "재정경제부령_부가가치세법 시행규칙.md",
+   "mst": "284995",
+   "group": "설립·운영",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
+  },
+  {
+   "name": "산업재해보상보험법",
+   "law_type": "법률",
+   "law_id": "001760",
+   "promulgation_no": "21375",
+   "promulgation_date": "2026.02.19",
+   "effective_date": "2026.07.01",
+   "ministry": "고용노동부",
+   "file": "법률_산업재해보상보험법.md",
+   "mst": "283459",
+   "group": "고용",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
+  },
+  {
+   "name": "산업재해보상보험법 시행령",
+   "law_type": "대통령령",
+   "law_id": "003793",
+   "promulgation_no": "36473",
+   "promulgation_date": "2026.06.30",
+   "effective_date": "2026.07.01",
+   "ministry": "고용노동부",
+   "file": "대통령령_산업재해보상보험법 시행령.md",
+   "mst": "287491",
+   "group": "고용",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
+  },
+  {
+   "name": "상표법 시행령",
+   "law_type": "대통령령",
+   "law_id": "003823",
+   "promulgation_no": "35809",
+   "promulgation_date": "2025.10.01",
+   "effective_date": "2025.10.01",
+   "ministry": "지식재산처",
+   "file": "대통령령_상표법 시행령.md",
+   "mst": "277543",
+   "group": "지재·데이터",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
   }
  ],
- "errors": []
+ "errors": [
+  {
+   "law": "중소기업 인력지원 특별법",
+   "stage": "fetch",
+   "error": "<urlopen error [Errno 111] Connection refused>"
+  },
+  {
+   "law": "부가가치세법 시행령",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  },
+  {
+   "law": "부가가치세법 시행규칙",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  },
+  {
+   "law": "산업재해보상보험법",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  },
+  {
+   "law": "산업재해보상보험법 시행령",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  },
+  {
+   "law": "상표법 시행령",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  }
+ ]
 }
