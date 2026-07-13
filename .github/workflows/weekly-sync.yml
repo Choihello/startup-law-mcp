@@ -4,6 +4,10 @@ on:
     - cron: "0 21 * * 0"   # 일 21:00 UTC = 월 06:00 KST
   workflow_dispatch:
 
+concurrency:
+  group: weekly-sync
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -18,14 +22,19 @@ jobs:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt
 
-      - name: 법령 동기화 + 인덱스 빌드
+      - name: 법령 동기화 (해외 러너에서 타임아웃 시 건너뜀)
+        continue-on-error: true
         env:
           LAW_OC: ${{ secrets.LAW_OC }}
           PYTHONUTF8: "1"
         run: |
           set -o pipefail
           python law_sync.py sync 2>&1 | tee sync_law.log
-          python law_search.py build
+
+      - name: 인덱스 빌드
+        env:
+          PYTHONUTF8: "1"
+        run: python law_search.py build
 
       - name: 지원사업 동기화
         env:
@@ -49,7 +58,7 @@ jobs:
             echo ""
             echo "### 법령"
             echo '```'
-            tail -n 5 sync_law.log
+            tail -n 5 sync_law.log 2>/dev/null || echo "(법령 동기화 건너뜀 — 로그 없음)"
             echo '```'
             echo "### 지원사업"
             echo '```'

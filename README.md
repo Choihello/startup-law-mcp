@@ -271,7 +271,7 @@ JSON을 `data/_cache/`에 저장해 눈으로 대조할 수 있다.
 
 ### 자동 동기화 (v1.4)
 
-GitHub Actions 워크플로 `weekly-sync`는 **매주 월요일 아침 06:00 (KST)**에 법령·지원사업을 동기화한다. 변경이 감지되면 `auto/weekly-sync` 브랜치로 PR이 자동 생성되며, 리뷰 후 머지하면 `main`에 반영된다. 급감·스키마 이상이 감지되면 기존 데이터를 보존하고 PR 없이 워크플로가 실패한다.
+GitHub Actions 워크플로 `weekly-sync`는 **매주 월요일 아침 06:00 (KST)**에 법령·지원사업을 동기화한다. 변경이 감지되면 `auto/weekly-sync` 브랜치로 PR이 자동 생성되며, 리뷰 후 머지하면 `main`에 반영된다. 급감·스키마 이상이 감지되면 기존 데이터를 보존하고 PR 없이 워크플로가 실패한다. GitHub Actions 러너(해외 IP)에서는 국가법령정보센터가 타임아웃될 수 있어, 이 경우 법령 갱신은 건너뛰고(기존 데이터 보존) 지원사업 변경만 PR에 반영된다 — 법령 갱신은 로컬에서 `python law_sync.py sync` 실행을 권장.
 
 **포크/자가 호스팅 설정**:
 1. Repository Settings → Secrets and variables → Actions에서:

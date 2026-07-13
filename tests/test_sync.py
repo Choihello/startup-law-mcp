@@ -31,6 +31,8 @@ def env(tmp_path, monkeypatch):
                 {"법령명한글": "테스트창업법 시행령", "법령일련번호": "222"},
                 {"법령명한글": "전혀다른법", "법령일련번호": "999"},
             ]
+        if query == "더미유지법":
+            return [{"법령명한글": "더미유지법", "법령일련번호": "333"}]
         return []
 
     def fake_fetch(oc, mst):
@@ -41,6 +43,10 @@ def env(tmp_path, monkeypatch):
             dele["법령"]["기본정보"]["법령명_한글"] = "테스트창업법 시행령"
             dele["법령"]["기본정보"]["법종구분"] = {"content": "대통령령"}
             return dele
+        if mst == "333":
+            dummy = json.loads(json.dumps(sample))  # deep copy
+            dummy["법령"]["기본정보"]["법령명_한글"] = "더미유지법"
+            return dummy
         raise RuntimeError("unknown mst")
 
     monkeypatch.setattr(law_sync, "fetch_law_list", fake_list)
@@ -73,15 +79,19 @@ def test_sync_only_filter(env):
     assert result["errors"] == []   # '존재하지않는법'은 필터로 스킵됨
 
 
-def test_sync_isolates_search_stage_error(env, monkeypatch):
+def test_sync_total_failure_preserves_manifest(env, monkeypatch):
+    law_sync.sync("dummy-oc")  # 정상 매니페스트 확보
+    before = (env / "sources.json").read_text(encoding="utf-8")
+
     def boom(oc, query):
         raise RuntimeError("network down")
+
     monkeypatch.setattr(law_sync, "fetch_law_list", boom)
-    result = law_sync.sync("dummy-oc")
-    # 두 큐레이션 항목 모두 search 단계에서 격리되고 sync 자체는 완주
-    assert result["count"] == 0
-    assert len(result["errors"]) == 2
-    assert {e["stage"] for e in result["errors"]} == {"search"}
+    with pytest.raises(RuntimeError, match="전체 실패"):
+        law_sync.sync("dummy-oc")
+    # 매니페스트·파일 무변경 (stale 오염 없음)
+    assert (env / "sources.json").read_text(encoding="utf-8") == before
+    assert (env / "laws" / "법률_테스트창업법.md").exists()
 
 
 def test_sync_isolates_fetch_stage_error(env, monkeypatch):
@@ -104,23 +114,30 @@ def test_sync_prunes_removed_curation(env):
     law_sync.sync("dummy-oc")
     assert (env / "laws" / "법률_테스트창업법.md").exists()
     # 큐레이션에서 테스트창업법 제거 후 재동기화 → 파일·매니페스트에서 제외
+    # (더미유지법을 함께 두어 신규 성공 0건 → 전체 실패 가드에 걸리지 않게 함)
     (env / "laws.json").write_text(json.dumps(
-        {"laws": [{"name": "존재하지않는법", "group": "테스트"}]}, ensure_ascii=False),
+        {"laws": [{"name": "더미유지법", "group": "테스트"},
+                  {"name": "존재하지않는법", "group": "테스트"}]}, ensure_ascii=False),
         encoding="utf-8")
     result = law_sync.sync("dummy-oc")
     assert not (env / "laws" / "법률_테스트창업법.md").exists()
     assert "테스트창업법" not in {s["name"] for s in result["sources"]}
 
 
-def test_sync_carries_stale_on_failure(env, monkeypatch):
+def test_sync_carries_stale_on_partial_failure(env, monkeypatch):
     law_sync.sync("dummy-oc")  # 정상 세대 확보
 
-    def boom(oc, query):
-        raise RuntimeError("api down")
+    real_fetch = law_sync.fetch_law  # env fixture가 심은 fake
 
-    monkeypatch.setattr(law_sync, "fetch_law_list", boom)
+    def flaky(oc, mst):
+        if mst == "111":  # 본법만 실패, 시행령은 성공
+            raise RuntimeError("api down")
+        return real_fetch(oc, mst)
+
+    monkeypatch.setattr(law_sync, "fetch_law", flaky)
     result = law_sync.sync("dummy-oc")
     by_name = {s["name"]: s for s in result["sources"]}
     assert by_name["테스트창업법"].get("stale") is True
     assert "api down" in by_name["테스트창업법"].get("stale_reason", "")
-    assert (env / "laws" / "법률_테스트창업법.md").exists()  # prune에서 보호
+    assert (env / "laws" / "법률_테스트창업법.md").exists()  # prune 보호
+    assert by_name["테스트창업법 시행령"].get("stale") is None  # 신규 성공분은 fresh
