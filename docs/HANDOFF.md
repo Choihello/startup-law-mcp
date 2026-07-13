@@ -1,32 +1,17 @@
 # HANDOFF — startup-law-mcp 세션 인수인계
 
 > 새 세션에서 이 프로젝트를 이어받을 때 이 문서 하나로 재개할 수 있게 쓴 문서.
-> 갱신일: 2026-07-13. 저장소: https://github.com/Choihello/startup-law-mcp
+> 갱신일: 2026-07-14. 저장소: https://github.com/Choihello/startup-law-mcp
 
 ## 1. 지금 어디까지 왔나 (⚡ 재개 지점)
 
-**v2.0(Fly.io 원격 배포) 진행 중 — 코드 완료, 실배포 직전에서 사용자 대기.**
+**로드맵 전부 완료 — v2.0 원격 배포까지 끝. 진행 중인 작업 없음.**
 
-- 브랜치: `feat/v2.0` (main 미병합 — **의도적**: FLY_API_TOKEN 등록 전에 fly-deploy.yml이 main에 가면 실패 런 발생)
-- 완료: Task 1(include_admin 게이트 — 원격 12도구/로컬 13도구, server_http.py) + Task 2(Dockerfile·fly.toml·fly-deploy.yml·scripts/remote_smoke.py·README "바로 쓰기" 섹션). 둘 다 태스크 리뷰 통과, pytest **128개** 전부 통과, 로컬 streamable-http E2E 검증 완료(`SMOKE OK`)
-- **대기 중인 사용자 액션**: ① fly.io 가입+카드 등록, ② flyctl 설치(`pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"`) 후 `fly auth login`
-- 사용자가 "됐어" 하면 → **Task 3 실행** (아래 절차)
-
-### Task 3 절차 (계획: docs/superpowers/plans/2026-07-13-remote-v2.0.md 의 Task 3)
-
-```bash
-flyctl auth whoami                        # 로그인 확인
-git switch feat/v2.0
-flyctl apps create startup-law-mcp        # 이름 충돌 시 startup-law-mcp-kr 등 → fly.toml·README URL 동기화 커밋
-flyctl deploy --remote-only               # 첫 배포
-python -X utf8 scripts/remote_smoke.py https://<앱>.fly.dev/mcp   # SMOKE OK 확인 (절전 첫 요청 지연 관찰)
-flyctl tokens create deploy -x 999999h    # 배포 토큰
-# → gh secret set FLY_API_TOKEN (토큰 파이프)
-# → main 병합·push는 사용자 확인 후 (기존 패턴: AskUserQuestion으로 병합+push 확인)
-# → 병합 push가 fly-deploy 워크플로를 트리거 — 성공 = 자동 재배포 검증
-# → 사용자에게 커넥터 URL 등록 안내 (claude.ai 설정→커넥터, Claude Code: claude mcp add --transport http)
-# → 메모리 파일(v2.0 완료)·이 문서 갱신
-```
+- 원격 서버: **https://startup-law-mcp.fly.dev/mcp** (도쿄 nrt, shared-cpu-1x 512MB, auto-stop 절전 — 유휴 후 첫 요청은 콜드스타트 수 초)
+- 2026-07-14 배포 완료 기록: 앱 `startup-law-mcp` 생성(이름 충돌 없음) → `flyctl deploy --remote-only` 성공 → 원격 스모크 `SMOKE OK`(12도구·search_law 실응답) → `FLY_API_TOKEN` 시크릿 등록 → feat/v2.0 → main 병합·push → **fly-deploy 워크플로 런 성공 = 자동 재배포 검증 완료** → 재배포 후 스모크 재확인 `SMOKE OK`
+- Fly 머신 **2대** 생성됨(Fly HA 기본값). 둘 다 auto-stop이라 과금 미미 — 1대로 줄이려면 `flyctl scale count 1`
+- flyctl: `~/.fly/bin` (PATH에 없으면 수동 추가), 계정 zeratot@gmail.com
+- **커넥터 등록(사용자)**: claude.ai 설정→커넥터에 위 URL 추가, 또는 `claude mcp add --transport http startup-law https://startup-law-mcp.fly.dev/mcp`
 
 ## 2. 프로젝트 한 줄 요약
 
@@ -43,7 +28,7 @@ flyctl tokens create deploy -x 999999h    # 배포 토큰
 | v1.2 | 안정화: sync 방어(0건·급감70%·원자교체), 입력 검증(invalid_input·limit 1~50), ambiguous_source, data_status(10번째), CI(test.yml) |
 | v1.3 | 창업 특화 3도구: delegation_map(위임 지도), startup_stage_guide(6단계 큐레이션+실재성 게이트), check_effective_date(시행일·경과조치) |
 | v1.4 | 주간 자동 동기화 PR(weekly-sync.yml, 월 06시 KST) + 법령 전체 실패 가드(해외 IP 타임아웃 대응) + 경과조치 recall 회복 |
-| v2.0 | 원격 배포 — **진행 중 (§1)** |
+| v2.0 | Fly.io 원격 배포 — include_admin 게이트(원격 12/로컬 13), Dockerfile·fly.toml·fly-deploy.yml 자동 재배포, 원격 스모크. **배포 완료 2026-07-14 (§1)** |
 
 ## 4. 작업 방식 (이 프로젝트의 확립된 컨벤션)
 
@@ -57,7 +42,7 @@ flyctl tokens create deploy -x 999999h    # 배포 토큰
 - **LAW_OC** (국가법령정보센터): 값은 로컬 메모리 파일(§7)과 GitHub Actions Secrets에 있음
 - **DATA_GO_KR_KEY** (공공데이터포털/K-Startup): 값은 로컬 메모리 파일(§7)과 GitHub Actions Secrets에 있음
 - GitHub 저장소 설정 완료: Actions Secrets 2종, Workflow permissions(Read/write + PR 생성 허용)
-- **FLY_API_TOKEN**: 아직 없음 — Task 3에서 생성·등록
+- **FLY_API_TOKEN**: 등록 완료(2026-07-14) — Fly 배포 전용 토큰, fly-deploy.yml 자동 재배포용
 - 원격 서버 자체는 시크릿 0개 (읽기 전용, 데이터는 이미지에 구움)
 
 ## 6. 알아둘 함정·백로그
@@ -75,7 +60,7 @@ flyctl tokens create deploy -x 999999h    # 배포 토큰
 - 세션 메모리: `~/.claude/projects/C--Users-zerat-OneDrive-------Teddy----MCP/memory/startup-law-mcp-project.md` — **키 값 포함, 최신 상태·백로그의 단일 진실**
 - 스레드 마케팅 문구 초안: 세션 기록에 있음 (버전 A 창업자용/B 개발자용/C 3연작 — 도구 13개 기준으로 갱신 필요)
 
-## 8. v2.0 이후 (전부 끝나면)
+## 8. v2.0 이후 (지금 여기)
 
 로드맵 완료. 남는 선택지: 스레드 배포 마케팅, 업종 특화(음식점·이커머스 인허가),
-기업마당 소스 추가, BM25/평가셋(원격 사용량 생기면).
+기업마당 소스 추가, BM25/평가셋(원격 사용량 생기면), Fly 머신 1대로 축소(`flyctl scale count 1`).
