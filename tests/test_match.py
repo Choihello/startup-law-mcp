@@ -95,3 +95,112 @@ def test_needs_review_extracts_special_conditions():
     assert any("소재" in s for s in snippets)
     assert programs._needs_review("예비창업자") == []
     assert programs._needs_review("") == []
+
+
+# ---- match_programs 본체 ----
+
+def _cache(monkeypatch, items):
+    monkeypatch.setattr(programs, "_CACHE", {
+        "announcements": items, "intros": [],
+        "fetched_at": "2026-07-10T00:00:00+00:00", "integrity_warnings": []})
+
+
+def _ann(i, **kw):
+    base = {"id": str(i), "kind": "공고", "name": f"공고{i}", "category": "",
+            "summary": "", "target": "", "target_age": FULL_AGE,
+            "years": "예비창업자,1년미만,2년미만,3년미만,5년미만,7년미만",
+            "region": "전국", "apply_start": "2026-07-01",
+            "apply_end": "2026-08-30", "org": "", "contact": "",
+            "url": f"https://www.k-startup.go.kr/{i}"}
+    base.update(kw)
+    return base
+
+
+def test_match_excludes_mismatch_and_counts(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, target_age="만 20세 이상 ~ 만 39세 이하"),
+        _ann(2, target_age="만 40세 이상"),
+    ])
+    r = programs.match_programs(age=45, today=T)
+    assert [row["name"] for row in r["results"]] == ["공고2"]
+    assert r["excluded"] == 1
+    assert r["results"][0]["checks"]["age"]["verdict"] == "match"
+    assert r["results"][0]["checks"]["age"]["evidence"] == "만 40세 이상"
+
+
+def test_match_unknown_included_with_label(monkeypatch):
+    _cache(monkeypatch, [_ann(1, target_age="청년 우대")])
+    r = programs.match_programs(age=30, today=T)
+    assert r["results"][0]["checks"]["age"]["verdict"] == "unknown"
+    assert r["excluded"] == 0
+
+
+def test_match_pre_startup_and_years(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, years="예비창업자"),
+        _ann(2, years="1년미만,2년미만,3년미만"),
+    ])
+    pre = programs.match_programs(pre_startup=True, today=T)
+    assert [row["name"] for row in pre["results"]] == ["공고1"]
+    running = programs.match_programs(years=2, today=T)
+    assert [row["name"] for row in running["results"]] == ["공고2"]
+
+
+def test_match_region_and_multi_condition(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, region="대구"),
+        _ann(2, region="경기"),
+        _ann(3, region="전국", target_age="만 20세 이상 ~ 만 39세 이하"),
+    ])
+    r = programs.match_programs(age=45, region="대구", today=T)
+    # 공고2: 지역 탈락 / 공고3: 나이 탈락 / 공고1: 둘 다 통과(전연령+대구)
+    assert [row["name"] for row in r["results"]] == ["공고1"]
+    assert r["excluded"] == 2
+    assert set(r["results"][0]["checks"]) == {"age", "region"}
+
+
+def test_match_only_open_announcements(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, apply_end="2026-07-01"),              # closed → 제외 (excluded 미집계)
+        _ann(2, apply_start="2026-08-01", apply_end="2026-08-20"),  # upcoming → 포함
+    ])
+    r = programs.match_programs(age=30, today=T)
+    assert [row["name"] for row in r["results"]] == ["공고2"]
+    assert r["results"][0]["status"] == "upcoming"
+    assert r["excluded"] == 0
+
+
+def test_match_sorted_by_deadline_and_limit(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, apply_end="2026-08-30"),
+        _ann(2, apply_end="2026-07-20"),
+        _ann(3, apply_end="2026-08-01"),
+    ])
+    r = programs.match_programs(age=30, today=T)
+    assert [row["apply_end"] for row in r["results"]] == \
+        ["2026-07-20", "2026-08-01", "2026-08-30"]
+    assert len(programs.match_programs(age=30, limit=1, today=T)["results"]) == 1
+    assert programs.match_programs(age=30, limit=-5, today=T)["results"]  # clamp → 1
+
+
+def test_match_keyword_labels_not_filters(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, summary="바이오 헬스케어 스타트업 지원"),
+        _ann(2, summary="일반 사업화 지원"),
+    ])
+    r = programs.match_programs(age=30, keyword="바이오", today=T)
+    assert len(r["results"]) == 2  # keyword는 탈락 사유 아님
+    hits = {row["name"]: row["keyword_hit"] for row in r["results"]}
+    assert hits == {"공고1": True, "공고2": False}
+
+
+def test_match_needs_review_surfaces(monkeypatch):
+    _cache(monkeypatch, [_ann(1, target="여성 예비창업자 대상")])
+    r = programs.match_programs(age=30, today=T)
+    assert any("여성" in s for s in r["results"][0]["needs_review"])
+
+
+def test_match_warning_propagates(monkeypatch):
+    _cache(monkeypatch, [_ann(1)])
+    monkeypatch.setitem(programs._CACHE, "fetched_at", "2026-07-01T00:00:00+00:00")
+    assert "10일" in programs.match_programs(age=30, today=T)["warning"]

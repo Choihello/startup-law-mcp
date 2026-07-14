@@ -345,3 +345,48 @@ def _needs_review(target_text) -> list[str]:
         if snip and snip not in out:
             out.append(snip)
     return out
+
+
+def match_programs(age: Optional[int] = None, region: Optional[str] = None,
+                   pre_startup: Optional[bool] = None, years: Optional[float] = None,
+                   keyword: Optional[str] = None, limit: int = 20,
+                   today: Optional[date] = None) -> dict:
+    """프로필 기반 자격 스크리닝 — 탈락 사유 확인된 공고만 제외, 마감순.
+
+    스크리닝이지 판정이 아니다: 제공된 프로필 인자만 검사하고, 해석 불가
+    조건은 unknown으로 남긴다. keyword는 탈락 사유가 아니라 라벨.
+    """
+    today = today or date.today()
+    limit = max(1, min(limit, 50))
+    data = load_programs()
+    kw_tokens = ls.tokenize(keyword) if keyword else []
+    results: list[dict] = []
+    excluded = 0
+    for it in data["announcements"]:
+        st = program_status(it, today)
+        if st not in ("open", "closing_soon", "upcoming"):
+            continue
+        checks: dict[str, dict] = {}
+        if age is not None:
+            checks["age"] = _check_age(age, it.get("target_age"))
+        if pre_startup:
+            checks["pre_startup"] = _check_pre_startup(it.get("years"))
+        if years is not None:
+            checks["years"] = _check_years(years, it.get("years"))
+        if region is not None:
+            checks["region"] = _check_region(region, it.get("region"))
+        if any(c["verdict"] == "mismatch" for c in checks.values()):
+            excluded += 1
+            continue
+        row = _result_row(it, st, today)
+        row["checks"] = checks
+        review = _needs_review(it.get("target"))
+        if review:
+            row["needs_review"] = review
+        if kw_tokens:
+            text = _searchable_text(it)
+            row["keyword_hit"] = any(t in text for t in kw_tokens)
+        results.append(row)
+    results.sort(key=lambda r: r.get("apply_end") or "9999-12-31")
+    return {"results": results[:limit], "excluded": excluded,
+            "warning": staleness_warning(data, today)}
