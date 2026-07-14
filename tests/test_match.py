@@ -220,3 +220,38 @@ def test_match_pre_startup_false_with_years_no_duplicate_check(monkeypatch):
     _cache(monkeypatch, [_ann(1, years="예비창업자,3년미만")])
     r = programs.match_programs(pre_startup=False, years=2, today=T)
     assert set(r["results"][0]["checks"]) == {"years"}
+
+
+# ---- 공유 픽스처(실데이터 형식) 통합 ----
+
+def test_match_with_shared_fixture(programs_index):
+    # T 기준 공고1(예비·전연령·전국)은 closing_soon, 공고4는 closed
+    r = programs.match_programs(pre_startup=True, region="대구", today=T)
+    names = [row["name"] for row in r["results"]]
+    assert names == ["2026년 예비창업패키지 예비창업자 모집 공고"]
+    assert r["results"][0]["status"] == "closing_soon"
+    assert r["excluded"] == 2  # 공고2·3 — 예비창업자 토큰 없음
+
+
+# ---- 실데이터 스모크 (로컬 스냅샷 전수 — CI에는 스냅샷 없음 → skip) ----
+import json as _json
+from pathlib import Path
+
+import pytest
+
+_REAL = Path(programs.__file__).parent / "data" / "programs" / "announcements.json"
+
+
+@pytest.mark.skipif(not _REAL.exists(), reason="실데이터 스냅샷 없음 (CI)")
+def test_real_snapshot_band_parse_rate():
+    items = _json.loads(_REAL.read_text(encoding="utf-8"))["items"]
+    assert items
+    age_unknown = sum(1 for it in items
+                      if programs._check_age(30, it.get("target_age"))["verdict"]
+                      == "unknown")
+    years_unknown = sum(1 for it in items
+                        if programs._check_years(3, it.get("years"))["verdict"]
+                        == "unknown")
+    # 구조화 필드 파싱 실패율 5% 미만 — 초과하면 K-Startup 형식 변화 신호
+    assert age_unknown / len(items) < 0.05, f"age unknown {age_unknown}/{len(items)}"
+    assert years_unknown / len(items) < 0.05, f"years unknown {years_unknown}/{len(items)}"
