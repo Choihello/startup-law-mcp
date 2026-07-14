@@ -283,6 +283,16 @@ def _check_pre_startup(tokens_raw) -> dict:
     return {"verdict": "mismatch", "evidence": raw}
 
 
+def _check_founded(tokens_raw) -> dict:
+    """pre_startup=False(기창업, 업력 미상) — 예비창업자 전용 공고만 걸러낸다."""
+    raw, tokens = _split_tokens(tokens_raw)
+    if not tokens:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    if all(t.startswith("예비") for t in tokens):
+        return {"verdict": "mismatch", "evidence": raw}
+    return {"verdict": "match", "evidence": raw}
+
+
 def _check_years(years: float, tokens_raw) -> dict:
     raw, tokens = _split_tokens(tokens_raw)
     if not tokens:
@@ -369,8 +379,11 @@ def match_programs(age: Optional[int] = None, region: Optional[str] = None,
         checks: dict[str, dict] = {}
         if age is not None:
             checks["age"] = _check_age(age, it.get("target_age"))
-        if pre_startup:
-            checks["pre_startup"] = _check_pre_startup(it.get("years"))
+        if pre_startup is not None:
+            if pre_startup:
+                checks["pre_startup"] = _check_pre_startup(it.get("years"))
+            elif years is None:
+                checks["pre_startup"] = _check_founded(it.get("years"))
         if years is not None:
             checks["years"] = _check_years(years, it.get("years"))
         if region is not None:

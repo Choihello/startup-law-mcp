@@ -204,3 +204,19 @@ def test_match_warning_propagates(monkeypatch):
     _cache(monkeypatch, [_ann(1)])
     monkeypatch.setitem(programs._CACHE, "fetched_at", "2026-07-01T00:00:00+00:00")
     assert "10일" in programs.match_programs(age=30, today=T)["warning"]
+
+
+def test_match_pre_startup_false_excludes_pre_only(monkeypatch):
+    _cache(monkeypatch, [
+        _ann(1, years="예비창업자"),
+        _ann(2, years="예비창업자,1년미만,2년미만"),
+    ])
+    r = programs.match_programs(pre_startup=False, today=T)
+    assert [row["name"] for row in r["results"]] == ["공고2"]
+    assert r["excluded"] == 1
+
+
+def test_match_pre_startup_false_with_years_no_duplicate_check(monkeypatch):
+    _cache(monkeypatch, [_ann(1, years="예비창업자,3년미만")])
+    r = programs.match_programs(pre_startup=False, years=2, today=T)
+    assert set(r["results"][0]["checks"]) == {"years"}
