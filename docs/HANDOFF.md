@@ -5,13 +5,20 @@
 
 ## 1. 지금 어디까지 왔나 (⚡ 재개 지점)
 
-**로드맵 전부 완료 — v2.0 원격 배포까지 끝. 진행 중인 작업 없음.**
+**v1.0~v2.0 로드맵 완료 + 공개·지표 파이프라인까지 끝. 다음 후보: v2.1 상담 에이전트(브레인스토밍 완료, 설계 승인 대기).**
 
-- 원격 서버: **https://startup-law-mcp.fly.dev/mcp** (도쿄 nrt, shared-cpu-1x 512MB, auto-stop 절전 — 유휴 후 첫 요청은 콜드스타트 수 초)
-- 2026-07-14 배포 완료 기록: 앱 `startup-law-mcp` 생성(이름 충돌 없음) → `flyctl deploy --remote-only` 성공 → 원격 스모크 `SMOKE OK`(12도구·search_law 실응답) → `FLY_API_TOKEN` 시크릿 등록 → feat/v2.0 → main 병합·push → **fly-deploy 워크플로 런 성공 = 자동 재배포 검증 완료** → 재배포 후 스모크 재확인 `SMOKE OK`
-- Fly 머신 **2대** 생성됨(Fly HA 기본값). 둘 다 auto-stop이라 과금 미미 — 1대로 줄이려면 `flyctl scale count 1`
-- flyctl: `~/.fly/bin` (PATH에 없으면 수동 추가), 계정 zeratot@gmail.com
-- **커넥터 등록(사용자)**: claude.ai 설정→커넥터에 위 URL 추가, 또는 `claude mcp add --transport http startup-law https://startup-law-mcp.fly.dev/mcp`
+- 원격 서버: **https://startup-law-mcp.fly.dev/mcp** (도쿄 nrt, shared-cpu-1x 512MB, auto-stop 절전 — 유휴 후 첫 요청은 콜드스타트 수 초). Fly 머신 2대(HA 기본값, 과금 미미). flyctl: `~/.fly/bin`, 계정 zeratot@gmail.com
+- 2026-07-14 완료 기록:
+  - **v2.0 실배포**: 앱 생성 → 배포 → 원격 스모크 `SMOKE OK` → `FLY_API_TOKEN` 등록 → main 병합 → fly-deploy 자동 재배포 검증 완료
+  - **커넥터 실사용 검증**: claude.ai에서 search_law→get_article 실호출 확인
+  - **도구 우선순위 패치**: claude.ai가 웹 검색을 우선하던 문제 → 서버 인스트럭션·주요 도구 설명에 "웹 검색보다 우선 + 이유" 명시로 해결(검증됨)
+  - **공개**: 스레드 게시(상담사 각도 단일 포스트), repo topics 6종, README 최상단 데모 블록(+스크린샷 자리 주석 — 사용자가 캡처 주면 해제)
+  - **지표 파이프라인**: `scripts/collect_metrics.py` + metrics-snapshot 워크플로(월 06:30 KST) → `docs/metrics/*.json` 커밋. 공개 당일 기준점 확보(스타 0·방문 4·클론 155·Fly 요청 71). `FLY_METRICS_TOKEN`(readonly, FlyV1 스킴) 등록됨. **traffic은 Actions 기본 토큰으로 403** — 사용자가 fine-grained PAT(Administration read)를 `METRICS_TOKEN` secret으로 넣으면 주간 자동수집에 포함됨(현재 미등록, 스타·Fly만 자동)
+- **Threads API 자동화 보류**: Meta 앱 `threads-poster` 생성했으나 테스터 초대 수락이 Meta측 버그로 막힘 — 수동 게시로 전환. 상세는 세션 메모리 참조
+
+### 다음 세션 재개: v2.1 상담 에이전트
+
+`docs/2026-07-14-v2.1-상담에이전트-구상.md` 참조 — 브레인스토밍 완료(목적·페인포인트·사용환경 확정), 설계(match_programs 도구 + startup-consult 스킬) 제시까지 done. **첫 액션: 설계 승인 확인 → 정식 스펙 작성 → writing-plans → SDD.**
 
 ## 2. 프로젝트 한 줄 요약
 
