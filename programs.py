@@ -290,7 +290,9 @@ def _check_founded(tokens_raw) -> dict:
         return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
     if all(t.startswith("예비") for t in tokens):
         return {"verdict": "mismatch", "evidence": raw}
-    return {"verdict": "match", "evidence": raw}
+    if any(_YEARS_CAP.search(t) for t in tokens if not t.startswith("예비")):
+        return {"verdict": "match", "evidence": raw}
+    return {"verdict": "unknown", "evidence": raw}
 
 
 def _check_years(years: float, tokens_raw) -> dict:

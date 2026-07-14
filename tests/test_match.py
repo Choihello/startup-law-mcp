@@ -72,6 +72,12 @@ def test_check_pre_startup():
     assert programs._check_pre_startup("")["verdict"] == "unknown"
 
 
+def test_check_founded_unknown_on_unparseable():
+    assert programs._check_founded("별도규정")["verdict"] == "unknown"
+    assert programs._check_founded("예비창업자,별도규정")["verdict"] == "unknown"
+    assert programs._check_founded("예비창업자,3년미만")["verdict"] == "match"
+
+
 # ---- _check_region ----
 
 def test_check_region():
@@ -233,7 +239,7 @@ def test_match_with_shared_fixture(programs_index):
     assert r["excluded"] == 2  # 공고2·3 — 예비창업자 토큰 없음
 
 
-# ---- 실데이터 스모크 (로컬 스냅샷 전수 — CI에는 스냅샷 없음 → skip) ----
+# ---- 실데이터 스모크 (공고 전수 파싱율 — 스냅샷은 커밋되어 CI에서도 실행; 부재 시에만 skip) ----
 import json as _json
 from pathlib import Path
 
@@ -242,7 +248,7 @@ import pytest
 _REAL = Path(programs.__file__).parent / "data" / "programs" / "announcements.json"
 
 
-@pytest.mark.skipif(not _REAL.exists(), reason="실데이터 스냅샷 없음 (CI)")
+@pytest.mark.skipif(not _REAL.exists(), reason="실데이터 스냅샷 없음")
 def test_real_snapshot_band_parse_rate():
     items = _json.loads(_REAL.read_text(encoding="utf-8"))["items"]
     assert items

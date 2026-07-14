@@ -1,7 +1,7 @@
 import asyncio
 
 
-def test_thirteen_tools_registered():
+def test_registered_tool_names():
     import server
 
     tools = asyncio.run(server.mcp.list_tools())
