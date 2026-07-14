@@ -80,6 +80,10 @@ def test_check_region():
     assert programs._check_region("대구광역시", "대구")["verdict"] == "match"  # 양방향 부분일치
     assert programs._check_region("대구", "경기")["verdict"] == "mismatch"
     assert programs._check_region("대구", "")["verdict"] == "unknown"
+    assert programs._check_region("충청남도", "충남")["verdict"] == "match"
+    assert programs._check_region("전라북도", "전북")["verdict"] == "match"
+    assert programs._check_region("경기도", "경기")["verdict"] == "match"
+    assert programs._check_region("충청남도", "충북")["verdict"] == "mismatch"
 
 
 # ---- _needs_review ----

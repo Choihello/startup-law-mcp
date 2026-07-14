@@ -307,14 +307,28 @@ def _check_years(years: float, tokens_raw) -> dict:
     return {"verdict": "mismatch", "evidence": raw}  # 예비창업자 전용 공고
 
 
+_REGION_ALIASES = {
+    "충청남도": "충남", "충청북도": "충북", "경상남도": "경남", "경상북도": "경북",
+    "전라남도": "전남", "전라북도": "전북", "전북특별자치도": "전북",
+    "강원도": "강원", "강원특별자치도": "강원", "경기도": "경기",
+    "제주도": "제주", "제주특별자치도": "제주", "세종특별자치시": "세종",
+}
+
+
+def _norm_region(s: str) -> str:
+    s = ls._nfc(str(s)).strip()
+    return _REGION_ALIASES.get(s, s)
+
+
 def _check_region(region: str, item_region) -> dict:
     raw = ls._nfc(str(item_region or "")).strip()
     if not raw:
         return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
     if raw == "전국":
         return {"verdict": "match", "evidence": "전국"}
-    q = ls._nfc(str(region)).strip()
-    if q and (q in raw or raw in q):
+    raw_n = _norm_region(item_region)
+    q = _norm_region(region)
+    if q and (q in raw_n or raw_n in q):
         return {"verdict": "match", "evidence": raw}
     return {"verdict": "mismatch", "evidence": raw}
 
