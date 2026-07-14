@@ -236,18 +236,12 @@ python law_search.py refs "중소기업창업 지원법" 제2조
 |---|---|---|
 | `match_programs` | `age?, region?, pre_startup?, years?, keyword?, limit?` | 프로필(나이·지역·예비/업력) 기반 지원사업 자격 스크리닝 — 탈락 사유(`mismatch`) 확인된 공고만 제외하고 마감순 반환, 조건별 근거(`checks`)와 해석 불가 항목(`unknown`)·확인 필요(`needs_review`) 표시. 판정기가 아니라 스크리닝 도구 |
 
-## Claude Code 스킬 — startup-consult
+## Claude Code 스킬 — startup-consult (별도 저장소)
 
-`skills/startup-consult/`는 이 서버를 상담 양식으로 쓰는 Claude Code 스킬이다.
-대화에서 프로필을 추출해 `match_programs`로 스크리닝하고, 상담 카드로 정리하며,
-애매한 자격 조건은 법령 근거로 해석하되 단정하지 않는다. `SKILL.md`(상담 흐름·카드
-양식)와 `references/eligibility-notes.md`(자격 해석 시 근거 제시 원칙)로 구성된다.
-
-설치:
-
-```powershell
-Copy-Item -Recurse skills/startup-consult "$env:USERPROFILE/.claude/skills/"
-```
+이 서버를 상담 양식으로 쓰는 Claude Code 스킬은 별도 저장소로 관리한다:
+**https://github.com/Choihello/startup-consult** — 대화에서 프로필을 추출해
+`match_programs`로 스크리닝하고, 상담 카드로 정리하며, 애매한 자격 조건은
+법령 근거로 해석하되 단정하지 않는다. 설치 방법은 해당 저장소 README 참조.
 
 ## 데이터 구조
 
@@ -394,8 +388,8 @@ v1.0/v1.1 수동 실행은 여전히 가능하며, 자동 동기화는 변경이
   Fly.io 배포(`fly.toml`, `fly-deploy` 워크플로) → 설치 없이 URL 하나로 연결, `main` 병합
   시 원격 서버 자동 재배포
 - **v2.1 상담 스크리닝 (현재)** — `match_programs` 도구(프로필 기반 자격 스크리닝,
-  총 14개/원격 13개) + `skills/startup-consult` Claude Code 스킬(상담 카드 양식,
-  자격 해석은 근거 제시·단정 금지) 추가
+  총 14개/원격 13개) 추가 + 상담 스킬 [startup-consult](https://github.com/Choihello/startup-consult)
+  별도 저장소 공개(상담 카드 양식, 자격 해석은 근거 제시·단정 금지)
 
 ## 라이선스
 

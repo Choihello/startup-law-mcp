@@ -11,8 +11,9 @@
 - **v2.1 상담 스크리닝** (`feat/v2.1-consult` 브랜치, 병합·재배포 대기):
   - 신규 도구 `match_programs`(`programs.py` + `server.py`) — 프로필(age/region/
     pre_startup/years/keyword) 기반 자격 스크리닝. 로컬 14도구·원격 13도구(was 13/12)
-  - 신규 스킬 `skills/startup-consult/`(`SKILL.md` + `references/eligibility-notes.md`)
-    — 상담 카드 양식, 자격 해석은 근거 제시·단정 금지
+  - 상담 스킬은 **별도 저장소로 분리** (2026-07-15 사용자 결정 — 깃헙 저장소 수 확대):
+    https://github.com/Choihello/startup-consult (`SKILL.md` + `references/eligibility-notes.md`
+    — 상담 카드 양식, 자격 해석은 근거 제시·단정 금지)
   - 스펙: `docs/superpowers/specs/2026-07-14-consult-v2.1-design.md`, 계획:
     `docs/superpowers/plans/2026-07-14-consult-v2.1.md`
   - **다음 액션: 사용자 확인 후 `main` 병합 → fly-deploy 자동 재배포 → 원격 스모크로
@@ -49,9 +50,9 @@ SDD 실행까지 완료(§1). **첫 액션: 사용자에게 `feat/v2.1-consult` 
 | v1.4 | 주간 자동 동기화 PR(weekly-sync.yml, 월 06시 KST) + 법령 전체 실패 가드(해외 IP 타임아웃 대응) + 경과조치 recall 회복 |
 | v2.0 | Fly.io 원격 배포 — include_admin 게이트(원격 12/로컬 13), Dockerfile·fly.toml·fly-deploy.yml 자동 재배포, 원격 스모크. **배포 완료 2026-07-14 (§1)** |
 
-v2.1(상담 스크리닝, `match_programs` + `skills/startup-consult`)은 `feat/v2.1-consult`
-브랜치에 구현 완료됐으나 아직 `main` 미병합 — 위 표는 병합 완료분만 다루므로 제외.
-상태는 §1 참조.
+v2.1(상담 스크리닝, `match_programs` + 별도 저장소 [startup-consult](https://github.com/Choihello/startup-consult))은
+`feat/v2.1-consult` 브랜치에 구현 완료됐으나 아직 `main` 미병합 — 위 표는 병합
+완료분만 다루므로 제외. 상태는 §1 참조.
 
 ## 4. 작업 방식 (이 프로젝트의 확립된 컨벤션)
 
