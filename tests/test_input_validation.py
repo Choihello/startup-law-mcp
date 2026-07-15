@@ -41,3 +41,21 @@ def test_registered_tool_rejects_bad_limit():
 def test_registered_tool_rejects_bad_status():
     res = asyncio.run(server.mcp.call_tool("search_program", {"query": "창업", "status": "opened"}))
     assert "invalid_input" in str(res)
+
+
+def test_match_programs_requires_profile():
+    res = asyncio.run(server.mcp.call_tool("match_programs", {}))
+    assert "invalid_input" in str(res)
+
+
+def test_match_programs_rejects_pre_startup_with_years():
+    res = asyncio.run(server.mcp.call_tool(
+        "match_programs", {"pre_startup": True, "years": 3}))
+    assert "invalid_input" in str(res)
+
+
+def test_match_programs_rejects_out_of_range():
+    for args in ({"age": -1}, {"age": 121}, {"years": -1}, {"years": 51},
+                 {"region": "   "}, {"keyword": " "}, {"age": 30, "limit": 0}):
+        res = asyncio.run(server.mcp.call_tool("match_programs", args))
+        assert "invalid_input" in str(res), args

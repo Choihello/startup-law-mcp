@@ -1,14 +1,14 @@
 import asyncio
 
 
-def test_thirteen_tools_registered():
+def test_registered_tool_names():
     import server
 
     tools = asyncio.run(server.mcp.list_tools())
     names = {t.name for t in tools}
     assert names == {"search_law", "get_article", "list_laws", "verify_citation",
                      "find_references", "search_program", "get_program",
-                     "list_open_programs", "sync_programs", "data_status",
+                     "list_open_programs", "match_programs", "sync_programs", "data_status",
                      "delegation_map", "startup_stage_guide", "check_effective_date"}
 
 
@@ -48,7 +48,7 @@ def test_remote_surface_excludes_admin():
     server.register_tools(remote, include_admin=False)
     remote_names = {t.name for t in asyncio.run(remote.list_tools())}
     assert "sync_programs" not in remote_names
-    assert len(remote_names) == 12
+    assert len(remote_names) == 13
     local_names = {t.name for t in asyncio.run(server.mcp.list_tools())}
     assert local_names - remote_names == {"sync_programs"}
 
@@ -58,4 +58,4 @@ def test_server_http_module_surface():
 
     names = {t.name for t in asyncio.run(server_http.mcp.list_tools())}
     assert "sync_programs" not in names
-    assert len(names) == 12
+    assert len(names) == 13

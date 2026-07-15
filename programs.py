@@ -7,6 +7,7 @@ data/programs/*.json 스냅샷을 로드해 상태 계산·검색·조회를 제
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
@@ -222,3 +223,185 @@ def list_open_programs(limit: int = 20, today: Optional[date] = None) -> dict:
         rows.append(_result_row(it, st, today))
     rows.sort(key=lambda r: r.get("apply_end") or "9999-12-31")
     return {"results": rows[:limit], "warning": staleness_warning(data, today)}
+
+
+# ---- match_programs: 프로필 기반 자격 스크리닝 ----
+# 판정 신호는 K-Startup 구조화 필드(target_age/years/region) — 2026-07-14 전수
+# 확인 기준 결측 0·자유텍스트와 충돌 0 (스펙 참조). 자유텍스트(target)는 판정에
+# 쓰지 않고 특수조건 감지(needs_review)에만 사용.
+
+_AGE_PART = re.compile(r"만\s*(\d+)세\s*(미만|이하|이상)")
+_YEARS_CAP = re.compile(r"(\d+)\s*년\s*(미만|이내|이하)")
+_UNKNOWN_EVIDENCE = "원문 확인 필요"
+
+_REVIEW_TERMS = ("여성", "대학생", "대학(원)생", "대학원생", "재직자", "소상공인",
+                 "재도전", "폐업", "재창업", "컨소시엄", "소재", "이전", "미가맹",
+                 "장애인", "외국인")
+
+
+def _parse_age_band(token: str) -> Optional[tuple[int, int]]:
+    """나이 밴드 토큰 → (lo, hi) 폐구간. '만 N세' 표현이 없으면 None."""
+    lo, hi, found = 0, 200, False
+    for m in _AGE_PART.finditer(token):
+        n, kind = int(m.group(1)), m.group(2)
+        found = True
+        if kind == "미만":
+            hi = min(hi, n - 1)
+        elif kind == "이하":
+            hi = min(hi, n)
+        else:
+            lo = max(lo, n)
+    return (lo, hi) if found else None
+
+
+def _split_tokens(raw) -> tuple[str, list[str]]:
+    text = ls._nfc(str(raw or "")).strip()
+    return text, [t.strip() for t in text.split(",") if t.strip()]
+
+
+def _check_age(age: int, target_age) -> dict:
+    raw, tokens = _split_tokens(target_age)
+    if not tokens:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    bands = [_parse_age_band(t) for t in tokens]
+    known = [b for b in bands if b is not None]
+    if not known:
+        return {"verdict": "unknown", "evidence": raw}
+    if any(lo <= age <= hi for lo, hi in known):
+        return {"verdict": "match", "evidence": raw}
+    if len(known) < len(bands):  # 해석 못한 토큰이 남음 — 탈락 단정 금지
+        return {"verdict": "unknown", "evidence": raw}
+    return {"verdict": "mismatch", "evidence": raw}
+
+
+def _check_pre_startup(tokens_raw) -> dict:
+    raw, tokens = _split_tokens(tokens_raw)
+    if not tokens:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    if any(t.startswith("예비") for t in tokens):
+        return {"verdict": "match", "evidence": raw}
+    return {"verdict": "mismatch", "evidence": raw}
+
+
+def _check_founded(tokens_raw) -> dict:
+    """pre_startup=False(기창업, 업력 미상) — 예비창업자 전용 공고만 걸러낸다."""
+    raw, tokens = _split_tokens(tokens_raw)
+    if not tokens:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    if all(t.startswith("예비") for t in tokens):
+        return {"verdict": "mismatch", "evidence": raw}
+    if any(_YEARS_CAP.search(t) for t in tokens if not t.startswith("예비")):
+        return {"verdict": "match", "evidence": raw}
+    return {"verdict": "unknown", "evidence": raw}
+
+
+def _check_years(years: float, tokens_raw) -> dict:
+    raw, tokens = _split_tokens(tokens_raw)
+    if not tokens:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    caps, unparsed = [], False
+    for t in tokens:
+        if t.startswith("예비"):
+            continue
+        m = _YEARS_CAP.search(t)
+        if m:
+            caps.append((int(m.group(1)), m.group(2)))
+        else:
+            unparsed = True
+    if caps:
+        if any(years < n if kind == "미만" else years <= n for n, kind in caps):
+            return {"verdict": "match", "evidence": raw}
+        if unparsed:
+            return {"verdict": "unknown", "evidence": raw}
+        return {"verdict": "mismatch", "evidence": raw}
+    if unparsed:
+        return {"verdict": "unknown", "evidence": raw}
+    return {"verdict": "mismatch", "evidence": raw}  # 예비창업자 전용 공고
+
+
+_REGION_ALIASES = {
+    "충청남도": "충남", "충청북도": "충북", "경상남도": "경남", "경상북도": "경북",
+    "전라남도": "전남", "전라북도": "전북", "전북특별자치도": "전북",
+    "강원도": "강원", "강원특별자치도": "강원", "경기도": "경기",
+    "제주도": "제주", "제주특별자치도": "제주", "세종특별자치시": "세종",
+}
+
+
+def _norm_region(s: str) -> str:
+    s = ls._nfc(str(s)).strip()
+    return _REGION_ALIASES.get(s, s)
+
+
+def _check_region(region: str, item_region) -> dict:
+    raw = ls._nfc(str(item_region or "")).strip()
+    if not raw:
+        return {"verdict": "unknown", "evidence": _UNKNOWN_EVIDENCE}
+    if raw == "전국":
+        return {"verdict": "match", "evidence": "전국"}
+    raw_n = _norm_region(item_region)
+    q = _norm_region(region)
+    if q and (q in raw_n or raw_n in q):
+        return {"verdict": "match", "evidence": raw}
+    return {"verdict": "mismatch", "evidence": raw}
+
+
+def _needs_review(target_text) -> list[str]:
+    """지원대상 자유텍스트에서 구조화 필드로 판정 불가한 특수조건을 발췌."""
+    text = ls._nfc(str(target_text or ""))
+    out: list[str] = []
+    for term in _REVIEW_TERMS:
+        pos = text.find(term)
+        if pos < 0:
+            continue
+        snip = ls.make_snippet(text, pos)
+        if snip and snip not in out:
+            out.append(snip)
+    return out
+
+
+def match_programs(age: Optional[int] = None, region: Optional[str] = None,
+                   pre_startup: Optional[bool] = None, years: Optional[float] = None,
+                   keyword: Optional[str] = None, limit: int = 20,
+                   today: Optional[date] = None) -> dict:
+    """프로필 기반 자격 스크리닝 — 탈락 사유 확인된 공고만 제외, 마감순.
+
+    스크리닝이지 판정이 아니다: 제공된 프로필 인자만 검사하고, 해석 불가
+    조건은 unknown으로 남긴다. keyword는 탈락 사유가 아니라 라벨.
+    """
+    today = today or date.today()
+    limit = max(1, min(limit, 50))
+    data = load_programs()
+    kw_tokens = ls.tokenize(keyword) if keyword else []
+    results: list[dict] = []
+    excluded = 0
+    for it in data["announcements"]:
+        st = program_status(it, today)
+        if st not in ("open", "closing_soon", "upcoming"):
+            continue
+        checks: dict[str, dict] = {}
+        if age is not None:
+            checks["age"] = _check_age(age, it.get("target_age"))
+        if pre_startup is not None:
+            if pre_startup:
+                checks["pre_startup"] = _check_pre_startup(it.get("years"))
+            elif years is None:
+                checks["pre_startup"] = _check_founded(it.get("years"))
+        if years is not None:
+            checks["years"] = _check_years(years, it.get("years"))
+        if region is not None:
+            checks["region"] = _check_region(region, it.get("region"))
+        if any(c["verdict"] == "mismatch" for c in checks.values()):
+            excluded += 1
+            continue
+        row = _result_row(it, st, today)
+        row["checks"] = checks
+        review = _needs_review(it.get("target"))
+        if review:
+            row["needs_review"] = review
+        if kw_tokens:
+            text = _searchable_text(it)
+            row["keyword_hit"] = any(t in text for t in kw_tokens)
+        results.append(row)
+    results.sort(key=lambda r: r.get("apply_end") or "9999-12-31")
+    return {"results": results[:limit], "excluded": excluded,
+            "warning": staleness_warning(data, today)}
