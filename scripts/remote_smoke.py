@@ -1,4 +1,4 @@
-"""원격 MCP 서버 스모크 — initialize → tools/list(12개) → search_law 실호출.
+"""원격 MCP 서버 스모크 — initialize → tools/list(13개) → search_law 실호출.
 
 사용:  python scripts/remote_smoke.py http://127.0.0.1:8080/mcp
        python scripts/remote_smoke.py https://<앱>.fly.dev/mcp
@@ -19,8 +19,9 @@ async def main(url: str) -> None:
             tools = await session.list_tools()
             names = sorted(t.name for t in tools.tools)
             print(f"tools({len(names)}):", ", ".join(names))
-            assert len(names) == 12, "원격 표면은 12개여야 함"
+            assert len(names) == 13, "원격 표면은 13개여야 함"
             assert "sync_programs" not in names
+            assert "match_programs" in names
             result = await session.call_tool(
                 "search_law", {"query": "창업 세액감면", "limit": 3})
             text = str(result.content)[:300]
