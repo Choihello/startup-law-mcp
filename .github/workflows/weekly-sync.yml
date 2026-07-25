@@ -70,6 +70,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: PR 생성 (변경 시에만)
+        id: cpr
         uses: peter-evans/create-pull-request@v6
         with:
           branch: auto/weekly-sync
@@ -81,3 +82,39 @@ jobs:
             data/laws/**
             data/sources.json
             data/programs/**
+
+      # PR은 "무엇이 바뀌었나"를 남기는 기록용이고, 머지 게이트는 위의
+      # '전체 테스트' 단계다 — 실패하면 PR 자체가 만들어지지 않는다.
+      # (PR에 test.yml이 붙지 않는 이유: GITHUB_TOKEN이 만든 PR은 다른
+      #  워크플로를 트리거하지 않는 GitHub 정책 때문. 그래서 PR 위에
+      #  검사를 기대할 수 없고, 게이트를 이 잡 안에 두는 것이다.)
+      - name: 자동 머지
+        if: steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge ${{ steps.cpr.outputs.pull-request-number }} --squash --delete-branch
+
+      # GITHUB_TOKEN이 만든 push도 워크플로를 트리거하지 않으므로
+      # fly-deploy.yml이 깨어나지 않는다. 여기서 직접 배포하지 않으면
+      # 데이터는 main에 들어갔는데 서버는 옛것을 계속 서비스한다 —
+      # 눈에 안 보이는 고장이라 반드시 명시적으로 배포한다.
+      #
+      # 머지된 main을 새로 받아서 배포한다. flyctl은 작업 디렉터리를
+      # 빌드 컨텍스트로 올리므로, 동기화 직후의 러너 상태에 기대지 않고
+      # 실제로 머지된 트리를 기준으로 삼는다.
+      - name: 머지된 main 체크아웃
+        if: steps.cpr.outputs.pull-request-number
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          clean: true
+
+      - name: flyctl 설치
+        if: steps.cpr.outputs.pull-request-number
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: 배포
+        if: steps.cpr.outputs.pull-request-number
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
