@@ -7,6 +7,8 @@ on:
       - "data/**"
       - "Dockerfile"
       - "fly.toml"
+      # 의존성 핀 변경도 이미지 재빌드 대상 (SDK 업그레이드가 원격에 반영되도록)
+      - "requirements.txt"
       - ".github/workflows/fly-deploy.yml"
 
 concurrency:
