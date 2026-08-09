@@ -636,7 +636,9 @@
    "file": "법률_약관의 규제에 관한 법률.md",
    "mst": "260021",
    "group": "온라인 사업",
-   "origin": "law.go.kr"
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error [Errno 111] Connection refused>"
   },
   {
    "name": "약관의 규제에 관한 법률 시행령",
@@ -649,8 +651,16 @@
    "file": "대통령령_약관의 규제에 관한 법률 시행령.md",
    "mst": "256827",
    "group": "온라인 사업",
-   "origin": "law.go.kr"
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error [Errno 111] Connection refused>"
   }
  ],
- "errors": []
+ "errors": [
+  {
+   "law": "약관의 규제에 관한 법률",
+   "stage": "search",
+   "error": "<urlopen error [Errno 111] Connection refused>"
+  }
+ ]
 }
