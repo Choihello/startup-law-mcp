@@ -1,0 +1,30 @@
+{
+  "captured_at": "2026-08-16T21:43:03+00:00",
+  "repo": "Choihello/startup-law-mcp",
+  "github": {
+    "stars": 1,
+    "forks": 0,
+    "watchers": 0,
+    "views": {
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    },
+    "clones": {
+      "error": "HTTPError: HTTP Error 403: Forbidden"
+    }
+  },
+  "fly": {
+    "raw": {
+      "status": "success",
+      "isPartial": false,
+      "data": {
+        "resultType": "vector",
+        "result": []
+      },
+      "stats": {
+        "seriesFetched": "0",
+        "executionTimeMsec": 58
+      }
+    },
+    "note": "쿼리 결과 해석 실패 — 원본 보존"
+  }
+}
