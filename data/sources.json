@@ -41,6 +41,32 @@
    "origin": "law.go.kr"
   },
   {
+   "name": "벤처기업육성에 관한 특별법",
+   "law_type": "법률",
+   "law_id": "001471",
+   "promulgation_no": "21447",
+   "promulgation_date": "2026.03.05",
+   "effective_date": "2026.07.01",
+   "ministry": "중소벤처기업부",
+   "file": "법률_벤처기업육성에 관한 특별법.md",
+   "mst": "284081",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr"
+  },
+  {
+   "name": "벤처기업육성에 관한 특별법 시행령",
+   "law_type": "대통령령",
+   "law_id": "003617",
+   "promulgation_no": "36480",
+   "promulgation_date": "2026.06.30",
+   "effective_date": "2026.07.01",
+   "ministry": "중소벤처기업부",
+   "file": "대통령령_벤처기업육성에 관한 특별법 시행령.md",
+   "mst": "287501",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr"
+  },
+  {
    "name": "벤처기업육성에 관한 특별법 시행규칙",
    "law_type": "중소벤처기업부령",
    "law_id": "007234",
@@ -317,12 +343,12 @@
    "name": "근로기준법",
    "law_type": "법률",
    "law_id": "001872",
-   "promulgation_no": "21373",
-   "promulgation_date": "2026.02.19",
-   "effective_date": "2026.08.20",
+   "promulgation_no": "21857",
+   "promulgation_date": "2026.08.04",
+   "effective_date": "2026.10.02",
    "ministry": "고용노동부",
    "file": "법률_근로기준법.md",
-   "mst": "283457",
+   "mst": "290781",
    "group": "고용",
    "origin": "law.go.kr"
   },
@@ -624,48 +650,7 @@
    "mst": "256827",
    "group": "온라인 사업",
    "origin": "law.go.kr"
-  },
-  {
-   "name": "벤처기업육성에 관한 특별법",
-   "law_type": "법률",
-   "law_id": "001471",
-   "promulgation_no": "21447",
-   "promulgation_date": "2026.03.05",
-   "effective_date": "2026.07.01",
-   "ministry": "중소벤처기업부",
-   "file": "법률_벤처기업육성에 관한 특별법.md",
-   "mst": "284081",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr",
-   "stale": true,
-   "stale_reason": "fetch: <urlopen error timed out>"
-  },
-  {
-   "name": "벤처기업육성에 관한 특별법 시행령",
-   "law_type": "대통령령",
-   "law_id": "003617",
-   "promulgation_no": "36480",
-   "promulgation_date": "2026.06.30",
-   "effective_date": "2026.07.01",
-   "ministry": "중소벤처기업부",
-   "file": "대통령령_벤처기업육성에 관한 특별법 시행령.md",
-   "mst": "287501",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr",
-   "stale": true,
-   "stale_reason": "fetch: <urlopen error timed out>"
   }
  ],
- "errors": [
-  {
-   "law": "벤처기업육성에 관한 특별법",
-   "stage": "fetch",
-   "error": "<urlopen error timed out>"
-  },
-  {
-   "law": "벤처기업육성에 관한 특별법 시행령",
-   "stage": "fetch",
-   "error": "<urlopen error timed out>"
-  }
- ]
+ "errors": []
 }
