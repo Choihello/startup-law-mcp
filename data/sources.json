@@ -2,45 +2,6 @@
  "count": 50,
  "sources": [
   {
-   "name": "중소기업창업 지원법",
-   "law_type": "법률",
-   "law_id": "001472",
-   "promulgation_no": "21293",
-   "promulgation_date": "2025.12.30",
-   "effective_date": "2026.07.01",
-   "ministry": "중소벤처기업부",
-   "file": "법률_중소기업창업 지원법.md",
-   "mst": "281995",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "중소기업창업 지원법 시행령",
-   "law_type": "대통령령",
-   "law_id": "004974",
-   "promulgation_no": "36640",
-   "promulgation_date": "2026.09.01",
-   "effective_date": "2026.09.01",
-   "ministry": "중소벤처기업부",
-   "file": "대통령령_중소기업창업 지원법 시행령.md",
-   "mst": "289025",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "중소기업창업 지원법 시행규칙",
-   "law_type": "중소벤처기업부령",
-   "law_id": "008263",
-   "promulgation_no": "00107",
-   "promulgation_date": "2025.12.31",
-   "effective_date": "2026.01.01",
-   "ministry": "중소벤처기업부",
-   "file": "중소벤처기업부령_중소기업창업 지원법 시행규칙.md",
-   "mst": "282421",
-   "group": "창업·벤처 코어",
-   "origin": "law.go.kr"
-  },
-  {
    "name": "벤처기업육성에 관한 특별법",
    "law_type": "법률",
    "law_id": "001471",
@@ -574,58 +535,6 @@
    "origin": "law.go.kr"
   },
   {
-   "name": "개인정보 보호법 시행령",
-   "law_type": "대통령령",
-   "law_id": "011468",
-   "promulgation_no": "36671",
-   "promulgation_date": "2026.09.10",
-   "effective_date": "2026.09.11",
-   "ministry": "개인정보보호위원회",
-   "file": "대통령령_개인정보 보호법 시행령.md",
-   "mst": "289537",
-   "group": "지재·데이터",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "전자상거래 등에서의 소비자보호에 관한 법률",
-   "law_type": "법률",
-   "law_id": "009318",
-   "promulgation_no": "21312",
-   "promulgation_date": "2026.01.20",
-   "effective_date": "2026.07.21",
-   "ministry": "공정거래위원회",
-   "file": "법률_전자상거래 등에서의 소비자보호에 관한 법률.md",
-   "mst": "282793",
-   "group": "온라인 사업",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "전자상거래 등에서의 소비자보호에 관한 법률 시행령",
-   "law_type": "대통령령",
-   "law_id": "009338",
-   "promulgation_no": "36507",
-   "promulgation_date": "2026.07.20",
-   "effective_date": "2026.07.21",
-   "ministry": "공정거래위원회",
-   "file": "대통령령_전자상거래 등에서의 소비자보호에 관한 법률 시행령.md",
-   "mst": "288143",
-   "group": "온라인 사업",
-   "origin": "law.go.kr"
-  },
-  {
-   "name": "전자상거래 등에서의 소비자보호에 관한 법률 시행규칙",
-   "law_type": "총리령",
-   "law_id": "009356",
-   "promulgation_no": "02136",
-   "promulgation_date": "2026.07.20",
-   "effective_date": "2026.07.21",
-   "ministry": "공정거래위원회",
-   "file": "총리령_전자상거래 등에서의 소비자보호에 관한 법률 시행규칙.md",
-   "mst": "288167",
-   "group": "온라인 사업",
-   "origin": "law.go.kr"
-  },
-  {
    "name": "약관의 규제에 관한 법률",
    "law_type": "법률",
    "law_id": "000667",
@@ -650,7 +559,128 @@
    "mst": "256827",
    "group": "온라인 사업",
    "origin": "law.go.kr"
+  },
+  {
+   "name": "중소기업창업 지원법",
+   "law_type": "법률",
+   "law_id": "001472",
+   "promulgation_no": "21293",
+   "promulgation_date": "2025.12.30",
+   "effective_date": "2026.07.01",
+   "ministry": "중소벤처기업부",
+   "file": "법률_중소기업창업 지원법.md",
+   "mst": "281995",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error [Errno -3] Temporary failure in name resolution>"
+  },
+  {
+   "name": "중소기업창업 지원법 시행령",
+   "law_type": "대통령령",
+   "law_id": "004974",
+   "promulgation_no": "36640",
+   "promulgation_date": "2026.09.01",
+   "effective_date": "2026.09.01",
+   "ministry": "중소벤처기업부",
+   "file": "대통령령_중소기업창업 지원법 시행령.md",
+   "mst": "289025",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error [Errno -3] Temporary failure in name resolution>"
+  },
+  {
+   "name": "중소기업창업 지원법 시행규칙",
+   "law_type": "중소벤처기업부령",
+   "law_id": "008263",
+   "promulgation_no": "00107",
+   "promulgation_date": "2025.12.31",
+   "effective_date": "2026.01.01",
+   "ministry": "중소벤처기업부",
+   "file": "중소벤처기업부령_중소기업창업 지원법 시행규칙.md",
+   "mst": "282421",
+   "group": "창업·벤처 코어",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error [Errno -3] Temporary failure in name resolution>"
+  },
+  {
+   "name": "개인정보 보호법 시행령",
+   "law_type": "대통령령",
+   "law_id": "011468",
+   "promulgation_no": "36671",
+   "promulgation_date": "2026.09.10",
+   "effective_date": "2026.09.11",
+   "ministry": "개인정보보호위원회",
+   "file": "대통령령_개인정보 보호법 시행령.md",
+   "mst": "289537",
+   "group": "지재·데이터",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "fetch: <urlopen error timed out>"
+  },
+  {
+   "name": "전자상거래 등에서의 소비자보호에 관한 법률",
+   "law_type": "법률",
+   "law_id": "009318",
+   "promulgation_no": "21312",
+   "promulgation_date": "2026.01.20",
+   "effective_date": "2026.07.21",
+   "ministry": "공정거래위원회",
+   "file": "법률_전자상거래 등에서의 소비자보호에 관한 법률.md",
+   "mst": "282793",
+   "group": "온라인 사업",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error timed out>"
+  },
+  {
+   "name": "전자상거래 등에서의 소비자보호에 관한 법률 시행령",
+   "law_type": "대통령령",
+   "law_id": "009338",
+   "promulgation_no": "36507",
+   "promulgation_date": "2026.07.20",
+   "effective_date": "2026.07.21",
+   "ministry": "공정거래위원회",
+   "file": "대통령령_전자상거래 등에서의 소비자보호에 관한 법률 시행령.md",
+   "mst": "288143",
+   "group": "온라인 사업",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error timed out>"
+  },
+  {
+   "name": "전자상거래 등에서의 소비자보호에 관한 법률 시행규칙",
+   "law_type": "총리령",
+   "law_id": "009356",
+   "promulgation_no": "02136",
+   "promulgation_date": "2026.07.20",
+   "effective_date": "2026.07.21",
+   "ministry": "공정거래위원회",
+   "file": "총리령_전자상거래 등에서의 소비자보호에 관한 법률 시행규칙.md",
+   "mst": "288167",
+   "group": "온라인 사업",
+   "origin": "law.go.kr",
+   "stale": true,
+   "stale_reason": "search: <urlopen error timed out>"
   }
  ],
- "errors": []
+ "errors": [
+  {
+   "law": "중소기업창업 지원법",
+   "stage": "search",
+   "error": "<urlopen error [Errno -3] Temporary failure in name resolution>"
+  },
+  {
+   "law": "개인정보 보호법 시행령",
+   "stage": "fetch",
+   "error": "<urlopen error timed out>"
+  },
+  {
+   "law": "전자상거래 등에서의 소비자보호에 관한 법률",
+   "stage": "search",
+   "error": "<urlopen error timed out>"
+  }
+ ]
 }
